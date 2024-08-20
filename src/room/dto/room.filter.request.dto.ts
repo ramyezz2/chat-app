@@ -1,9 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsOptional } from 'class-validator';
 import { pickBy } from 'lodash';
-import { GroupTypeEnum } from 'src/shared/enums';
+import { RoomTypeEnum } from 'src/shared/enums';
 
-export class GroupFilterRequest {
+export class RoomFilterRequest {
   constructor(initialize?) {
     if (initialize) {
       Object.assign(this, initialize);
@@ -12,7 +12,7 @@ export class GroupFilterRequest {
 
   @ApiProperty({
     type: String,
-    description: 'Group name',
+    description: 'Room name',
     required: false,
   })
   @IsOptional()
@@ -20,13 +20,13 @@ export class GroupFilterRequest {
 
   @ApiProperty({
     type: String,
-    enum: GroupTypeEnum,
-    description: 'Group type',
+    enum: RoomTypeEnum,
+    description: 'Room type',
     required: false,
   })
   @IsOptional()
-  @IsEnum(GroupTypeEnum)
-  type?: GroupTypeEnum;
+  @IsEnum(RoomTypeEnum)
+  type?: RoomTypeEnum;
 
   public buildFilterRO?(): any {
     const filterObj = {

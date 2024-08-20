@@ -6,13 +6,13 @@ import { AppGuard } from './shared/guards/app.guard';
 import { MongooseModule } from '@nestjs/mongoose';
 import environment from './config/environment';
 import { UserModule } from './user/user.module';
-import { GroupModule } from './group/group.module';
+import { RoomModule } from './room/room.module';
 
 @Module({
   imports: [
     MongooseModule.forRoot(environment.databaseUrl),
     UserModule,
-    GroupModule,
+    RoomModule,
   ],
   controllers: [AppController],
   providers: [

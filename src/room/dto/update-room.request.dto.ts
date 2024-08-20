@@ -2,15 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsMongoId, IsOptional } from 'class-validator';
 import { Types } from 'mongoose';
 
-export class UpdateGroupRequest {
-  @ApiProperty({ type: String, description: 'Group name', example: 'Group' })
+export class UpdateRoomRequest {
+  @ApiProperty({ type: String, description: 'Room name', example: 'Room' })
   @IsOptional()
   name: string;
 
   @ApiProperty({
     type: String,
-    description: 'Group description',
-    example: 'Group description',
+    description: 'Room description',
+    example: 'Room description',
   })
   @IsOptional()
   description: string;
@@ -18,7 +18,7 @@ export class UpdateGroupRequest {
   @ApiProperty({
     type: String,
     required: false,
-    description: 'Group members',
+    description: 'Room members',
     example: [new Types.ObjectId().toString()],
   })
   @IsOptional()

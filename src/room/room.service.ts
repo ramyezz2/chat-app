@@ -2,29 +2,29 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { isEmpty } from 'class-validator';
 import { Model, Types } from 'mongoose';
-import { GroupRoleEnum } from 'src/shared/enums';
+import { RoomRoleEnum } from 'src/shared/enums';
 import { pagination, PaginationDto } from '../shared/helpers/pagination';
 import { PaginationSimpleList } from '../shared/types/simple-list-pagination.dto';
 import { UserDocument } from '../user/user.schema';
 import {
-  CreateGroupRequest,
-  GroupResponse,
-  GroupsPagination,
-  UpdateGroupRequest,
+  CreateRoomRequest,
+  RoomResponse,
+  RoomsPagination,
+  UpdateRoomRequest,
 } from './dto';
-import { GroupDocument } from './group.schema';
-import { buildGroupResponse, buildGroupSimpleListResponse } from './utils';
+import { RoomDocument } from './room.schema';
+import { buildRoomResponse, buildRoomSimpleListResponse } from './utils';
 
 @Injectable()
-export class GroupService {
+export class RoomService {
   constructor(
-    @InjectModel(GroupDocument.name)
-    private readonly groupRepository: Model<GroupDocument>,
+    @InjectModel(RoomDocument.name)
+    private readonly roomRepository: Model<RoomDocument>,
     @InjectModel(UserDocument.name)
     private readonly userRepository: Model<UserDocument>,
   ) {}
 
-  async getGroupsWithPagination({
+  async getRoomsWithPagination({
     request,
     paginationDto,
     options,
@@ -32,7 +32,7 @@ export class GroupService {
     request;
     paginationDto: PaginationDto;
     options?: { where?: {}; order?: {} };
-  }): Promise<GroupsPagination> {
+  }): Promise<RoomsPagination> {
     const { page, limit } = paginationDto;
     const appUrl = `${request.protocol}://${request.get('host')}${
       request?._parsedUrl?.pathname
@@ -45,7 +45,7 @@ export class GroupService {
     if (isEmpty(sort)) sort['createdAt'] = -1;
 
     const paginatedData = await pagination({
-      model: this.groupRepository,
+      model: this.roomRepository,
       page,
       limit,
       sort: options?.order,
@@ -54,22 +54,22 @@ export class GroupService {
       populate: ['createdBy', 'members.member'],
     });
 
-    paginatedData.data = paginatedData.data.map((group) => {
-      return buildGroupResponse({ group });
+    paginatedData.data = paginatedData.data.map((room) => {
+      return buildRoomResponse({ room });
     });
     return paginatedData;
   }
 
-  async getGroups(): Promise<GroupResponse[]> {
-    const groups = await this.groupRepository.find({}).populate(['createdBy']);
+  async getRooms(): Promise<RoomResponse[]> {
+    const rooms = await this.roomRepository.find({}).populate(['createdBy']);
 
-    const GroupResponse = groups.map((group) => {
-      return buildGroupResponse({ group });
+    const RoomResponse = rooms.map((room) => {
+      return buildRoomResponse({ room });
     });
-    return GroupResponse;
+    return RoomResponse;
   }
 
-  async getGroupsSimpleList({
+  async getRoomsSimpleList({
     request,
     paginationDto,
     options,
@@ -90,7 +90,7 @@ export class GroupService {
     if (isEmpty(sort)) sort['createdAt'] = -1;
 
     const paginatedData = await pagination({
-      model: this.groupRepository,
+      model: this.roomRepository,
       page,
       limit,
       sort: options?.order,
@@ -98,22 +98,22 @@ export class GroupService {
       appUrl: appUrl,
     });
 
-    paginatedData.data = paginatedData.data.map((group) => {
-      return buildGroupSimpleListResponse({ group });
+    paginatedData.data = paginatedData.data.map((room) => {
+      return buildRoomSimpleListResponse({ room });
     });
     return paginatedData;
   }
 
-  async getGroup({ id }: { id: string }): Promise<GroupResponse> {
-    const group = await this.groupRepository
+  async getRoom({ id }: { id: string }): Promise<RoomResponse> {
+    const room = await this.roomRepository
       .findOne({
         _id: id,
       })
       .populate(['createdBy', 'members.member']);
-    if (!group) {
+    if (!room) {
       return null;
     }
-    return buildGroupResponse({ group });
+    return buildRoomResponse({ room });
   }
 
   async checkUniquenessForName(
@@ -122,16 +122,16 @@ export class GroupService {
     }: {
       name?: string;
     },
-    groupId = null,
+    roomId = null,
   ): Promise<boolean> {
-    const nameCondition = groupId
+    const nameCondition = roomId
       ? {
-          _id: { $nin: [groupId] },
+          _id: { $nin: [roomId] },
           name,
         }
       : { name };
     const nameCount = name
-      ? await this.groupRepository.countDocuments(nameCondition)
+      ? await this.roomRepository.countDocuments(nameCondition)
       : 0;
     const isNameExist = nameCount > 0 ? true : false;
 
@@ -155,25 +155,25 @@ export class GroupService {
     dto: { name, type, description, members },
   }: {
     currentUser: UserDocument;
-    dto: CreateGroupRequest;
-  }): Promise<GroupResponse> {
+    dto: CreateRoomRequest;
+  }): Promise<RoomResponse> {
     const createdBy = currentUser;
 
     const membersArray = [
       {
         member: currentUser._id,
-        role: GroupRoleEnum.ADMIN,
+        role: RoomRoleEnum.ADMIN,
       },
     ];
     members?.forEach((member) => {
       if (member !== createdBy._id?.toString()) {
         membersArray.push({
           member: new Types.ObjectId(member),
-          role: GroupRoleEnum.MEMBER,
+          role: RoomRoleEnum.MEMBER,
         });
       }
     });
-    const group = await new this.groupRepository({
+    const room = await new this.roomRepository({
       name,
       type,
       description,
@@ -181,7 +181,7 @@ export class GroupService {
       createdBy,
     }).save();
 
-    return this.getGroup({ id: group._id.toString() });
+    return this.getRoom({ id: room._id.toString() });
   }
 
   async update({
@@ -190,48 +190,98 @@ export class GroupService {
     currentUser,
   }: {
     id: string;
-    dto: UpdateGroupRequest;
+    dto: UpdateRoomRequest;
     currentUser: UserDocument;
-  }): Promise<GroupResponse> {
-    const group = await this.groupRepository.findOne({
+  }): Promise<RoomResponse> {
+    const room = await this.roomRepository.findOne({
       _id: id,
     });
     // Add UpdatedById
-    group.updatedBy = new Types.ObjectId(currentUser.id);
+    room.updatedBy = new Types.ObjectId(currentUser.id);
 
     if (dto.name) {
-      group.name = dto.name;
+      room.name = dto.name;
     }
     if (dto.description) {
-      group.description = dto.description;
+      room.description = dto.description;
     }
     if (!isEmpty(dto.members)) {
       const membersArray = [
         {
           member: new Types.ObjectId(currentUser.id),
-          role: GroupRoleEnum.ADMIN,
+          role: RoomRoleEnum.ADMIN,
         },
       ];
       dto.members?.forEach((member) => {
-        if (member !== group.createdBy?.toString()) {
+        if (member !== room.createdBy?.toString()) {
           membersArray.push({
             member: new Types.ObjectId(member),
-            role: GroupRoleEnum.MEMBER,
+            role: RoomRoleEnum.MEMBER,
           });
         }
       });
 
-      group.members = membersArray;
+      room.members = membersArray;
     }
 
-    await group.save();
+    await room.save();
 
-    return this.getGroup({ id: group._id.toString() });
+    return this.getRoom({ id: room._id.toString() });
   }
 
-  async deleteOne({ _id }: { _id: string }): Promise<GroupDocument> {
-    return this.groupRepository.findOneAndDelete({
+  async deleteOne({ _id }: { _id: string }): Promise<RoomDocument> {
+    return this.roomRepository.findOneAndDelete({
       _id,
     });
+  }
+
+  async isMemberInTheRoom({
+    currentUser,
+    roomId,
+  }: {
+    currentUser: UserDocument;
+    roomId: string;
+  }): Promise<boolean> {
+    const memberCount = await this.roomRepository.countDocuments({
+      _id: new Types.ObjectId(roomId),
+      'members.member': currentUser._id,
+    });
+    return memberCount > 0 ? true : false;
+  }
+
+  async joinRoom({
+    currentUser,
+    roomId,
+  }: {
+    currentUser: UserDocument;
+    roomId: string;
+  }) {
+    await this.roomRepository.updateOne(
+      { _id: new Types.ObjectId(roomId) },
+      {
+        $push: {
+          members: { member: currentUser._id, role: RoomRoleEnum.MEMBER },
+        },
+      },
+    );
+  }
+
+  async leaveRoom({
+    currentUser,
+    roomId,
+  }: {
+    currentUser: UserDocument;
+    roomId: string;
+  }) {
+    await this.roomRepository.updateOne(
+      {
+        _id: new Types.ObjectId(roomId),
+      },
+      {
+        $pull: {
+          members: { member: currentUser._id, role: RoomRoleEnum.MEMBER },
+        },
+      },
+    );
   }
 }

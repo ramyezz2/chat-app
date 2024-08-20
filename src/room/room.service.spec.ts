@@ -11,14 +11,14 @@ import {
   DbModule,
 } from '../shared/helpers/db-test-module';
 import { UserDocument, UserSchema } from '../user/user.schema';
-import { GroupDocument, GroupSchema } from './group.schema';
-import { GroupService } from './group.service';
+import { RoomDocument, RoomSchema } from './room.schema';
+import { RoomService } from './room.service';
 
-describe('GroupService', () => {
+describe('RoomService', () => {
   let connection: Connection;
-  let groupService: GroupService;
+  let roomService: RoomService;
   let userRepository: Model<UserDocument>;
-  let groupRepository: Model<GroupDocument>;
+  let roomRepository: Model<RoomDocument>;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -27,24 +27,24 @@ describe('GroupService', () => {
           connectionName: (new Date().getTime() * Math.random()).toString(16),
         }),
         MongooseModule.forFeature([
-          { name: GroupDocument.name, schema: GroupSchema },
+          { name: RoomDocument.name, schema: RoomSchema },
           { name: UserDocument.name, schema: UserSchema },
         ]),
       ],
-      providers: [GroupService],
+      providers: [RoomService],
     }).compile();
 
     connection = await module.get(getConnectionToken());
 
     // Models registration
     userRepository = module.get(getModelToken(UserDocument.name));
-    groupRepository = module.get(getModelToken(GroupDocument.name));
+    roomRepository = module.get(getModelToken(RoomDocument.name));
 
-    groupService = module.get<GroupService>(GroupService);
+    roomService = module.get<RoomService>(RoomService);
   });
 
   it('should be defined', () => {
-    expect(groupService).toBeDefined();
+    expect(roomService).toBeDefined();
   });
 
   afterAll(async () => {

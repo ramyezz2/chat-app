@@ -14,17 +14,17 @@ export enum GenderEnum {
   OTHER = 'OTHER',
 }
 
-export enum GroupTypeEnum {
+export enum RoomTypeEnum {
   PUBLIC = 'PUBLIC',
   PRIVATE = 'PRIVATE',
 }
 
-export enum GroupRoleEnum {
+export enum RoomRoleEnum {
   ADMIN = 'ADMIN',
   MEMBER = 'MEMBER',
 }
 
 export enum MessageTypeEnum {
   DIRECT = 'DIRECT',
-  Group = 'Group',
+  Room = 'Room',
 }

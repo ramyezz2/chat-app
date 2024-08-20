@@ -17,13 +17,13 @@ export class MessageDocument extends Document {
   @Prop({ required: true, enum: MessageTypeEnum })
   type: string;
 
-  @Prop({ type: Types.ObjectId, ref: 'Group' })
-  groupId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: 'RoomDocument' })
+  roomId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User' })
+  @Prop({ type: Types.ObjectId, ref: 'UserDocument' })
   senderId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: 'User' })
+  @Prop({ type: Types.ObjectId, ref: 'UserDocument' })
   receiverId: Types.ObjectId;
 
   @Prop({ required: true })

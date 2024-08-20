@@ -1,34 +1,34 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum, IsMongoId, IsNotEmpty, IsOptional } from 'class-validator';
-import { GroupTypeEnum } from 'src/shared/enums';
+import { RoomTypeEnum } from 'src/shared/enums';
 import { Types } from 'mongoose';
 
-export class CreateGroupRequest {
-  @ApiProperty({ type: String, description: 'Group name', example: 'Group' })
+export class CreateRoomRequest {
+  @ApiProperty({ type: String, description: 'Room name', example: 'Room' })
   @IsNotEmpty()
   name: string;
 
   @ApiProperty({
     type: String,
-    description: 'Group type',
-    example: GroupTypeEnum.PUBLIC,
+    description: 'Room type',
+    example: RoomTypeEnum.PUBLIC,
   })
   @IsNotEmpty()
-  @IsEnum(GroupTypeEnum)
-  type: GroupTypeEnum;
+  @IsEnum(RoomTypeEnum)
+  type: RoomTypeEnum;
 
   @ApiProperty({
     type: String,
     required: false,
-    description: 'Group description',
-    example: 'Group description',
+    description: 'Room description',
+    example: 'Room description',
   })
   @IsOptional()
   description: string;
 
   @ApiProperty({
     type: String,
-    description: 'Group members',
+    description: 'Room members',
     example: [new Types.ObjectId().toString()],
   })
   @IsNotEmpty()
