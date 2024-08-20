@@ -11,5 +11,20 @@ export enum LangEnum {
 export enum GenderEnum {
   MALE = 'MALE',
   FEMALE = 'FEMALE',
-  ALL = 'ALL',
+  OTHER = 'OTHER',
+}
+
+export enum GroupTypeEnum {
+  PUBLIC = 'PUBLIC',
+  PRIVATE = 'PRIVATE',
+}
+
+export enum GroupRoleEnum {
+  ADMIN = 'ADMIN',
+  MEMBER = 'MEMBER',
+}
+
+export enum MessageTypeEnum {
+  DIRECT = 'DIRECT',
+  Group = 'Group',
 }

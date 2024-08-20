@@ -7,7 +7,7 @@ import { isEmpty, isNil } from 'lodash';
 import { Model, Types } from 'mongoose';
 import environment from 'src/config/environment';
 import { PaginationDto } from 'src/shared/helpers/pagination';
-import { UserDocument } from './schemas/user.schema';
+import { UserDocument } from './user.schema';
 import {
   CreateUserRequest,
   LoginUserRequest,
@@ -15,8 +15,11 @@ import {
   UpdateUserRequest,
   UserResponse,
 } from './dto';
-import { buildMemberSL, buildUserRO } from './utils';
+import { buildMemberSimpleListResponse, buildUserResponse } from './utils';
 import { PaginationSimpleList } from 'src/shared/types/simple-list-pagination.dto';
+import { buildMemberResponse } from './utils/build-user-responses.helper';
+import { MemberResponse } from './dto/member.response.dto';
+import { log } from 'console';
 
 @Injectable()
 export class UserService {
@@ -26,7 +29,12 @@ export class UserService {
   ) {}
 
   async formatIUser(user: UserDocument): Promise<UserResponse> {
-    return buildUserRO({
+    // update loginAt
+    await this.userRepository.updateOne(
+      { _id: user._id },
+      { loginAt: new Date() },
+    );
+    return buildUserResponse({
       document: user,
     });
   }
@@ -42,7 +50,7 @@ export class UserService {
     return user;
   }
 
-  async findOne({
+  async login({
     dto: { email, password },
   }: {
     dto: LoginUserRequest;
@@ -94,8 +102,6 @@ export class UserService {
 
   async create({ dto }: { dto: CreateUserRequest }): Promise<UserResponse> {
     const { firstName, lastName, email, password, gender } = dto;
-    const code = crypto.randomBytes(2).toString('hex');
-
     const savedUser = await new this.userRepository({
       firstName,
       lastName,
@@ -104,7 +110,7 @@ export class UserService {
       hash: password ? await argon2.hash(password) : null,
     }).save();
 
-    return this.findById({ id: savedUser.id });
+    return this.formatIUser(savedUser);
   }
 
   async update({
@@ -113,10 +119,8 @@ export class UserService {
   }: {
     userId: string;
     dto: UpdateUserRequest;
-  }): Promise<UserResponse> {
+  }): Promise<MemberResponse> {
     const toUpdate = await this.userRepository.findById(userId);
-
-    const childrenDto = {};
 
     if (dto.firstName) {
       toUpdate.firstName = dto.firstName;
@@ -136,35 +140,7 @@ export class UserService {
 
     await toUpdate.save();
 
-    const updatesUser = await this.userRepository.findById(userId);
-    // if user update timezone || country|| language => update children data of this parent
-    if (Object.keys(childrenDto).length > 0) {
-      await this.userRepository.updateOne(
-        {
-          parent: new Types.ObjectId(userId),
-        },
-        {
-          ...childrenDto,
-        },
-      );
-    }
-
-    return this.formatIUser(updatesUser);
-  }
-
-  async changePassword({
-    userId,
-    dto,
-  }: {
-    userId: string;
-    dto: UpdateUserPasswordRequest;
-  }): Promise<UserResponse> {
-    const toUpdate = await this.userRepository.findById(userId).findOne({
-      _id: new Types.ObjectId(userId),
-    });
-    toUpdate.hash = await argon2.hash(dto.newPassword);
-    await toUpdate.save();
-    return this.formatIUser(toUpdate);
+    return this.findMemberById({ id: toUpdate.id });
   }
 
   async deleteById({ id }: { id: string }) {
@@ -173,7 +149,7 @@ export class UserService {
     });
   }
 
-  async findById({ id }: { id?: string }): Promise<UserResponse> {
+  async findMemberById({ id }: { id?: string }): Promise<MemberResponse> {
     const user = await this.userRepository.findOne({
       _id: new Types.ObjectId(id),
     });
@@ -181,17 +157,7 @@ export class UserService {
       const errors = ['Not found'];
       throw new HttpException({ errors }, 401);
     }
-    return this.formatIUser(user);
-  }
-
-  async findByEmail({ email }: { email: string }): Promise<UserResponse> {
-    const user = await this.checkExistByEmail({ email });
-
-    if (user) {
-      return this.formatIUser(user);
-    }
-
-    return null;
+    return buildMemberResponse({ member: user });
   }
 
   async findByRefreshToken({
@@ -204,7 +170,11 @@ export class UserService {
       if (decoded['type'] != 'REFRESH') {
         return null;
       }
-      return await this.findById({ id: decoded.id });
+      const user = await this.getUserById({ id: decoded.id });
+      if (!user) {
+        return null;
+      }
+      return this.formatIUser(user);
     } catch (error) {
       throw error;
     }
@@ -266,6 +236,8 @@ export class UserService {
           lastName: 1,
           name: 1,
           email: 1,
+          loginAt: 1,
+          logoutAt: 1,
           createdAt: 1,
         },
       },
@@ -286,7 +258,7 @@ export class UserService {
 
     const paginatedData = {
       data: usersResponse?.map((item) => {
-        return buildMemberSL(item);
+        return buildMemberSimpleListResponse(item);
       }),
       itemsPerPage: usersResponse.length,
       totalItems: docsCount,
@@ -299,5 +271,15 @@ export class UserService {
       }&limit=${limit}`,
     };
     return paginatedData;
+  }
+
+  async logout({ currentUser }: { currentUser: UserDocument }) {
+    // update lastDateUserLeaveApp
+    await this.userRepository.updateOne(
+      {
+        _id: currentUser._id,
+      },
+      { logoutAt: new Date() },
+    );
   }
 }

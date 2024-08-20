@@ -16,7 +16,7 @@ export const mockedGuard = {
 };
 
 export const mockToken = (
-  { id, firstName, lastName, email, isSuperAdmin, isEmailVerified },
+  { id, firstName, lastName, email },
   expiresIn: string,
 ) => {
   return jwt.sign(
@@ -25,8 +25,6 @@ export const mockToken = (
       firstName,
       lastName,
       email,
-      isSuperAdmin,
-      isEmailVerified,
     },
     'secret',
     { expiresIn },

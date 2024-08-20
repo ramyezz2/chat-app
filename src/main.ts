@@ -29,7 +29,6 @@ async function bootstrap() {
 
   await app.listen(environment.port);
 
-  // app.useGlobalPipes( new ValidationPipe());
   console.log(`Server is running on port ${environment.port}`);
 }
 bootstrap();

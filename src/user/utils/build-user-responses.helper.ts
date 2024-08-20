@@ -1,5 +1,5 @@
 import { UserResponse } from '../dto';
-import { UserDocument } from '../schemas/user.schema';
+import { UserDocument } from '../user.schema';
 import environment from 'src/config/environment';
 import * as jwt from 'jsonwebtoken';
 import { MemberResponse } from '../dto/member.response.dto';
@@ -19,24 +19,24 @@ export const buildUserForGuardRO = ({
   };
 };
 
-export const buildMemberSL = ({
-  document,
+export const buildMemberSimpleListResponse = ({
+  member,
 }: {
-  document: UserDocument;
+  member: UserDocument;
 }): SimpleListResponse => {
-  return !document
+  return !member
     ? null
     : {
-        id: document.id,
+        id: member.id,
         name: (
-          (document.firstName || '') +
+          (member.firstName || '') +
           ' ' +
-          (document.lastName || '')
+          (member.lastName || '')
         ).trim(),
       };
 };
 
-export const buildUserRO = ({
+export const buildUserResponse = ({
   document,
 }: {
   document: UserDocument;
@@ -71,4 +71,19 @@ const generateToken = (user, expiresIn, type?) => {
     environment.secret,
     { expiresIn },
   );
+};
+
+export const buildMemberResponse = ({
+  member,
+}: {
+  member: UserDocument;
+}): MemberResponse => {
+  return {
+    id: member.id,
+    firstName: member.firstName,
+    lastName: member.lastName,
+    email: member.email,
+    phone: member.phone || '',
+    gender: member.gender || '',
+  };
 };

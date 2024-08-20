@@ -1,5 +1,5 @@
 export {
-  buildMemberSL,
+  buildMemberSimpleListResponse,
   buildUserForGuardRO,
-  buildUserRO,
+  buildUserResponse,
 } from './build-user-responses.helper';

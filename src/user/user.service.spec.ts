@@ -9,7 +9,7 @@ import {
   DbModule,
   closeMongoConnection,
 } from 'src/shared/helpers/db-test-module';
-import { UserDocument, UserSchema } from './schemas/user.schema';
+import { UserDocument, UserSchema } from './user.schema';
 import { UserService } from './user.service';
 describe('UserService', () => {
   let connection: Connection;

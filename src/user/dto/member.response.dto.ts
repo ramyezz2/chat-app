@@ -15,4 +15,7 @@ export class MemberResponse {
 
   @ApiProperty({ type: String, description: 'user phone number' })
   phone?: string;
+
+  @ApiProperty({ type: String, description: 'user gender' })
+  gender?: string;
 }

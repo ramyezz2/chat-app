@@ -14,16 +14,6 @@ export class UserDocument extends Document {
   @Prop({ type: String, trim: true })
   lastName: string;
 
-  @Prop({
-    type: String,
-    trim: true,
-    lowercase: true,
-    index: true,
-    unique: true,
-    sparse: true,
-  })
-  userName: string;
-
   @Prop({ enum: GenderEnum, default: GenderEnum.MALE })
   gender: GenderEnum;
 
@@ -43,8 +33,13 @@ export class UserDocument extends Document {
   @Prop({ type: String, trim: true, index: true, unique: true, sparse: true })
   phone?: string;
 
+  @Prop({ type: Date })
+  loginAt: Date;
+
+  @Prop({ type: Date })
+  logoutAt: Date;
+
   createdAt;
-  buildUserRO?;
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserDocument);

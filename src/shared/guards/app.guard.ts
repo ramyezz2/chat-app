@@ -2,7 +2,7 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
-  UnauthorizedException
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { verify } from 'jsonwebtoken';
@@ -19,7 +19,7 @@ export class AppGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     const params = request.params;
-    
+
     const isAuthSkipped = this.reflector.get<boolean>(
       'isAuthSkipped',
       context.getHandler(),
@@ -51,6 +51,13 @@ export class AppGuard implements CanActivate {
     }
     // append user entity to current request
     request.user = user;
+
+    //check if user is logged out
+    if (user.logoutAt && user.loginAt && user.logoutAt > user.loginAt) {
+      throw new UnauthorizedException(
+        'You are logged out, You must login again.',
+      );
+    }
 
     return true;
   }
