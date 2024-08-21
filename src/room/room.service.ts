@@ -274,9 +274,7 @@ export class RoomService {
     roomId: string;
   }) {
     await this.roomRepository.updateOne(
-      {
-        _id: new Types.ObjectId(roomId),
-      },
+      { _id: new Types.ObjectId(roomId) },
       {
         $pull: {
           members: { member: currentUser._id, role: RoomRoleEnum.MEMBER },

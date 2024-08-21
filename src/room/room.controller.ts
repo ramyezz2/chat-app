@@ -34,6 +34,7 @@ import {
   CreateRoomRequest,
   UpdateRoomRequest,
 } from './dto';
+import { RoomTypeEnum } from 'src/shared/enums';
 
 @ApiTags('rooms')
 @Controller('rooms')
@@ -215,6 +216,16 @@ export class RoomController {
       );
     }
 
+    //check if the member is the creator
+    if (room.createdBy.id.toString() !== currentUser.id.toString()) {
+      const message =
+        'You are not authorized to update this room, You must be the room creator.';
+      throw new HttpException(
+        { message, errors: [message] },
+        HttpStatus.CONFLICT,
+      );
+    }
+
     // Validate uniqueness for name in the same company
     if (dto.name) {
       const checkUnique = await this.roomService.checkUniquenessForName(
@@ -300,8 +311,8 @@ export class RoomController {
   }
 
   @ApiOperation({
-    description: 'Join Room data',
-    summary: 'Join Room data',
+    description: 'Join public room',
+    summary: 'Join public room',
   })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -318,7 +329,7 @@ export class RoomController {
     description: 'Room not found',
   })
   @ApiBearerAuth()
-  @Post(':roomId/join')
+  @Post(':roomId/join-public-room')
   async joinRoom(
     @CurrentUser() currentUser,
     @Param('roomId', checkObjectIdPipe) roomId: string,
@@ -326,6 +337,15 @@ export class RoomController {
     const room = await this.roomService.getRoom({ id: roomId });
     if (!room) {
       const message = 'Room not found.';
+      throw new HttpException(
+        { message, errors: [message] },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+
+    if (room.type === RoomTypeEnum.PRIVATE) {
+      const message =
+        'You are not authorized to join this room, The room is not public.';
       throw new HttpException(
         { message, errors: [message] },
         HttpStatus.NOT_FOUND,
@@ -410,7 +430,7 @@ export class RoomController {
       roomId,
     });
     if (!memberInTheRoom) {
-      const message = 'You leaved the room before.';
+      const message = 'You are not a member in this room.';
       throw new HttpException(
         { message, errors: [message] },
         HttpStatus.NOT_FOUND,
