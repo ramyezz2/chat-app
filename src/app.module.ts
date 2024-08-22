@@ -10,6 +10,7 @@ import { RoomModule } from './room/room.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import { RedisOptions } from './config/redis-cashing-options';
+import { ChatsModule } from './chat/chats.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { RedisOptions } from './config/redis-cashing-options';
     ]),
     UserModule,
     RoomModule,
+    ChatsModule,
   ],
 
   controllers: [AppController],

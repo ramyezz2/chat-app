@@ -29,7 +29,7 @@ import { UserService } from './user.service';
 import { CurrentUser } from 'src/shared/decorators/user.decorator';
 import { UserDocument } from './user.schema';
 import { MemberResponse } from './dto/member.response.dto';
-import { CacheInterceptor } from '@nestjs/cache-manager';
+import { CacheInterceptor, CacheKey, CacheTTL } from '@nestjs/cache-manager';
 
 @ApiTags('users')
 @Controller('users')
@@ -53,7 +53,9 @@ export class UserController {
     description:
       'Email not verified yet, Please check your email to complete verification process.',
   })
-  @SkipAuth() 
+  @SkipAuth()
+  @CacheKey('user')
+  @CacheTTL(60)
   @Post('login')
   async login(@Body() dto: LoginUserRequest): Promise<UserResponse> {
     dto.email = dto.email.trim().toLowerCase();
@@ -77,8 +79,10 @@ export class UserController {
   })
   @ApiBearerAuth()
   @Get('me')
-  async findMe(@CurrentUser('id') id: string): Promise<MemberResponse> {
-    return this.userService.findMemberById({ id });
+  async findMe(
+    @CurrentUser() currentUser: UserDocument,
+  ): Promise<MemberResponse> {
+    return this.userService.findMemberById({ id: currentUser.id });
   }
 
   @ApiResponse({
