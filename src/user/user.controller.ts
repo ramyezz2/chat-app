@@ -8,6 +8,7 @@ import {
   Post,
   Put,
   Query,
+  UseInterceptors,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -28,9 +29,11 @@ import { UserService } from './user.service';
 import { CurrentUser } from 'src/shared/decorators/user.decorator';
 import { UserDocument } from './user.schema';
 import { MemberResponse } from './dto/member.response.dto';
+import { CacheInterceptor } from '@nestjs/cache-manager';
 
 @ApiTags('users')
 @Controller('users')
+@UseInterceptors(CacheInterceptor)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
@@ -50,7 +53,7 @@ export class UserController {
     description:
       'Email not verified yet, Please check your email to complete verification process.',
   })
-  @SkipAuth()
+  @SkipAuth() 
   @Post('login')
   async login(@Body() dto: LoginUserRequest): Promise<UserResponse> {
     dto.email = dto.email.trim().toLowerCase();

@@ -16,4 +16,8 @@ export default {
     /\/(pdf|doc|docx|png|jpg|jpeg|bmp|m4a|mp3|mpeg|mp4|avi|flv|wav|ttf|woff|woff2|font-woff)$/,
   tokenExpiresIn: '6h',
   refreshTokenExpiresIn: '30d',
+  redisHost: process.env.REDIS_HOST || 'localhost',
+  redisPort: process.env.REDIS_PORT || '6379',
+  redisUserName: process.env.REDIS_USERNAME,
+  redisPassword: process.env.REDIS_PASSWORD,
 };

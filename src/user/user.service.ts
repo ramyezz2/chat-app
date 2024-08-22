@@ -1,4 +1,4 @@
-import { HttpException, Injectable } from '@nestjs/common';
+import { HttpException, Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as argon2 from 'argon2';
 import * as jwt from 'jsonwebtoken';
@@ -17,12 +17,14 @@ import { MemberResponse } from './dto/member.response.dto';
 import { UserDocument } from './user.schema';
 import { buildMemberSimpleListResponse, buildUserResponse } from './utils';
 import { buildMemberResponse } from './utils/build-user-responses.helper';
-
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
 @Injectable()
 export class UserService {
   constructor(
     @InjectModel(UserDocument.name)
     private userRepository: Model<UserDocument>,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async formatIUser(user: UserDocument): Promise<UserResponse> {
@@ -31,20 +33,34 @@ export class UserService {
       { _id: user._id },
       { loginAt: new Date() },
     );
-    return buildUserResponse({
+    const userResponse = buildUserResponse({
       document: user,
     });
+
+    await this.cacheManager.set(user.id, {
+      user,
+      accessToken: userResponse.accessToken,
+    }); // ? Set data from the cache
+
+    return userResponse;
   }
 
   async findByIdForGuard({ id }: { id: string }): Promise<UserDocument> {
-    const user = await this.userRepository.findOne({
-      _id: new Types.ObjectId(id),
-    });
-    if (!user) {
-      return null;
-    }
+    const cashedUser = await this.cacheManager.get<UserDocument>(id); // ? Retrieve data from the cache
+    if (cashedUser) {
+      return cashedUser;
+    } else {
+      const user = await this.userRepository.findOne({
+        _id: new Types.ObjectId(id),
+      });
+      if (!user) {
+        return null;
+      }
 
-    return user;
+      await this.cacheManager.set(user.id, { user }); //  ? Set data in the cache
+
+      return user;
+    }
   }
 
   async login({
@@ -277,5 +293,7 @@ export class UserService {
       },
       { logoutAt: new Date() },
     );
+
+    await this.cacheManager.del(currentUser.id); // ? Delete data from the cache
   }
 }
