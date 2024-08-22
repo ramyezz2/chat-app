@@ -39,7 +39,7 @@ export async function pagination<T extends Document>({
   limit = limit ? parseInt(limit.toString()) : defaultLimit;
   page = page <= 0 ? 1 : page;
   limit = limit <= 0 ? 1 : limit;
-  sort = sort && Object.keys(sort).length > 0 ? sort : { createdAt: 'ASC' };
+  sort = sort && Object.keys(sort).length > 0 ? sort : { createdAt: 1 };
 
   const data = await model
     .find(query)

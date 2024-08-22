@@ -3,17 +3,23 @@ import { IsMongoId, IsOptional } from 'class-validator';
 import { Types } from 'mongoose';
 
 export class UpdateRoomRequest {
-  @ApiProperty({ type: String, description: 'Room name', example: 'Room' })
+  @ApiProperty({
+    type: String,
+    required: false,
+    description: 'Room name',
+    example: 'Room',
+  })
   @IsOptional()
-  name: string;
+  name?: string;
 
   @ApiProperty({
     type: String,
+    required: false,
     description: 'Room description',
     example: 'Room description',
   })
   @IsOptional()
-  description: string;
+  description?: string;
 
   @ApiProperty({
     type: String,
@@ -23,5 +29,5 @@ export class UpdateRoomRequest {
   })
   @IsOptional()
   @IsMongoId({ each: true })
-  members: string[];
+  members?: string[];
 }

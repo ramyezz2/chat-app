@@ -38,8 +38,6 @@ export class UserDocument extends Document {
 
   @Prop({ type: Date })
   logoutAt: Date;
-
-  createdAt;
 }
 
 export const UserSchema = SchemaFactory.createForClass(UserDocument);

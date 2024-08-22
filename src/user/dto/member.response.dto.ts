@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class MemberResponse {
-  @ApiProperty({ type: Number, description: 'user id' })
-  id: number;
+  @ApiProperty({ type: String, description: 'user id' })
+  id: string;
 
   @ApiProperty({ type: String, description: 'user first name' })
   firstName: string;

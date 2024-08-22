@@ -211,7 +211,7 @@ export class RoomController {
     if (!room) {
       const errors = ['Room not found.'];
       throw new HttpException(
-        { message: 'Not Found', errors },
+        { message: 'Room not found.', errors },
         HttpStatus.NOT_FOUND,
       );
     }

@@ -1,25 +1,22 @@
 import { HttpException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as argon2 from 'argon2';
-import * as crypto from 'crypto';
 import * as jwt from 'jsonwebtoken';
 import { isEmpty, isNil } from 'lodash';
 import { Model, Types } from 'mongoose';
 import environment from 'src/config/environment';
 import { PaginationDto } from 'src/shared/helpers/pagination';
-import { UserDocument } from './user.schema';
+import { PaginationSimpleList } from 'src/shared/types/simple-list-pagination.dto';
 import {
   CreateUserRequest,
   LoginUserRequest,
-  UpdateUserPasswordRequest,
   UpdateUserRequest,
   UserResponse,
 } from './dto';
-import { buildMemberSimpleListResponse, buildUserResponse } from './utils';
-import { PaginationSimpleList } from 'src/shared/types/simple-list-pagination.dto';
-import { buildMemberResponse } from './utils/build-user-responses.helper';
 import { MemberResponse } from './dto/member.response.dto';
-import { log } from 'console';
+import { UserDocument } from './user.schema';
+import { buildMemberSimpleListResponse, buildUserResponse } from './utils';
+import { buildMemberResponse } from './utils/build-user-responses.helper';
 
 @Injectable()
 export class UserService {
@@ -51,10 +48,9 @@ export class UserService {
   }
 
   async login({
-    dto: { email, password },
-  }: {
-    dto: LoginUserRequest;
-  }): Promise<UserResponse | null> {
+    email,
+    password,
+  }: LoginUserRequest): Promise<UserResponse | null> {
     const condition = { email };
     const user = await this.userRepository.findOne(condition);
     if (!user) {

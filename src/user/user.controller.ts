@@ -52,18 +52,15 @@ export class UserController {
   })
   @SkipAuth()
   @Post('login')
-  async login(
-    @Body() LoginUserRequest: LoginUserRequest,
-  ): Promise<UserResponse> {
-    LoginUserRequest.email = LoginUserRequest.email.trim().toLowerCase();
+  async login(@Body() dto: LoginUserRequest): Promise<UserResponse> {
+    dto.email = dto.email.trim().toLowerCase();
 
-    const userData = await this.userService.login({
-      dto: LoginUserRequest,
-    });
+    const userData = await this.userService.login(dto);
 
+    const message = 'Invalid email or password. Please try again.';
     const error = {
-      message: 'User not found.',
-      errors: ['email or password incorrect'],
+      message,
+      errors: [message],
     };
     if (!userData) throw new HttpException(error, HttpStatus.UNAUTHORIZED);
 
@@ -160,7 +157,7 @@ export class UserController {
     description: 'user updated',
   })
   @ApiBearerAuth()
-  @Patch('users')
+  @Patch()
   async update(@CurrentUser() currentUser, @Body() dto: UpdateUserRequest) {
     const userId = currentUser.id;
 
@@ -204,9 +201,7 @@ export class UserController {
   @ApiBearerAuth()
   @Post('logout')
   async logout(@CurrentUser() currentUser: UserDocument): Promise<void> {
-    const userData = await this.userService.logout({
-      currentUser,
-    });
+    await this.userService.logout({ currentUser });
 
     return;
   }

@@ -12,10 +12,6 @@ export const DbModule = (customOpts: MongooseModuleOptions = {}) =>
       return {
         ...customOpts,
         uri: environment.databaseUrl,
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        useCreateIndex: true,
-        useFindAndModify: true,
       };
     },
   });

@@ -38,7 +38,7 @@ export class RoomService {
       request?._parsedUrl?.pathname
     }`;
 
-    const sort = options?.order;
+    const sort = options?.order || {};
     for (const val in sort) {
       if (sort[val] !== 1) sort[val] = sort[val] === 'ASC' ? 1 : -1;
     }
@@ -83,7 +83,7 @@ export class RoomService {
       request?._parsedUrl?.pathname
     }`;
 
-    const sort = options?.order;
+    const sort = options?.order || {};
     for (const val in sort) {
       if (sort[val] !== 1) sort[val] = sort[val] === 'ASC' ? 1 : -1;
     }
@@ -230,7 +230,7 @@ export class RoomService {
   }
 
   async deleteOne({ _id }: { _id: string }): Promise<RoomDocument> {
-    return this.roomRepository.findOneAndDelete({
+    return await this.roomRepository.findOneAndDelete({
       _id,
     });
   }
