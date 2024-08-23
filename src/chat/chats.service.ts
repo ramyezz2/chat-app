@@ -1,34 +1,37 @@
 import { Injectable } from '@nestjs/common';
-import { CreateChatDto } from './dto/create-chat.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
 import { InjectModel } from '@nestjs/mongoose';
-import { Chat, ChatDocument } from './schemas/chat.schemas';
 import { Model } from 'mongoose';
-import { GetChatDto } from './dto/get-chat.dto';
+import { GetMessageDto } from './dto/get-message.dto';
+import { MessageDocument } from 'src/message/message.schema';
 
 @Injectable()
 export class ChatsService {
-
   constructor(
-    @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
-  ) { }
+    @InjectModel(MessageDocument.name)
+    private readonly messageRepository: Model<MessageDocument>,
+  ) {}
 
-  async create(senderId: string, createChatDto: CreateChatDto) {
-    const createdChat = new this.chatModel({
-      ...createChatDto,
+  async create(senderId: string, createMessageDto: CreateMessageDto) {
+    const createdMessage = new this.messageRepository({
+      ...createMessageDto,
       sender_id: senderId,
     });
-    return createdChat.save();
+    return createdMessage.save();
   }
 
-  async findAll(roomId: string, getChatDto: GetChatDto) {
+  async findAll(roomId: string, getMessageDto: GetMessageDto) {
     const query = {
       room_id: roomId,
     };
 
-    if (getChatDto.last_id) {
-      query['_id'] = { $lt: getChatDto.last_id };
+    if (getMessageDto.lastId) {
+      query['_id'] = { $lt: getMessageDto.lastId };
     }
 
-    return this.chatModel.find(query).sort({ createdAt: -1 }).limit(getChatDto.limit);
+    return this.messageRepository
+      .find(query)
+      .sort({ createdAt: -1 })
+      .limit(getMessageDto.limit);
   }
 }

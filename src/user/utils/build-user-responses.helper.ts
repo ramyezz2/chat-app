@@ -28,11 +28,7 @@ export const buildMemberSimpleListResponse = ({
     ? null
     : {
         id: member.id,
-        name: (
-          (member.firstName || '') +
-          ' ' +
-          (member.lastName || '')
-        ).trim(),
+        name: ((member.firstName || '') + ' ' + (member.lastName || '')).trim(),
       };
 };
 

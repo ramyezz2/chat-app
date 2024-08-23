@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
-import { ChatsService } from './chats.service';
-import { ChatsGateway } from './chats.gateway';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Chat, ChatSchema } from './schemas/chat.schemas';
+import { MessageDocument, MessageSchema } from 'src/message/message.schema';
+import { ChatsGateway } from './chats.gateway';
+import { ChatsService } from './chats.service';
 import { RedisPubSubService } from './redis-pubsub.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Chat.name, schema: ChatSchema }]),
+    MongooseModule.forFeature([
+      { name: MessageDocument.name, schema: MessageSchema },
+    ]),
   ],
   providers: [ChatsGateway, RedisPubSubService, ChatsService],
   exports: [ChatsService],

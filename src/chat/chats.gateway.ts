@@ -8,12 +8,12 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { ChatsService } from './chats.service';
-import { CreateChatDto } from './dto/create-chat.dto';
+import { CreateMessageDto } from './dto/create-message.dto';
 import { Server, Socket } from 'socket.io';
 import { wsAuthMiddleware } from 'src/shared/middleware/ws-auth.middleware';
 import { RedisPubSubService } from './redis-pubsub.service';
 
-@WebSocketGateway(3002,{ namespace: '/chats', cors: true })
+@WebSocketGateway(3002, { namespace: '/chats', cors: true })
 export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   private server: Server;
@@ -56,16 +56,16 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('newMessage')
   async create(
     @ConnectedSocket() client,
-    @MessageBody() createChatDto: CreateChatDto,
+    @MessageBody() createMessageDto: CreateMessageDto,
   ) {
     const senderId = client.handshake.user._id.toString();
-    const chat = await this.chatsService.create(senderId, createChatDto);
+    const chat = await this.chatsService.create(senderId, createMessageDto);
 
     //Shift this to the redis service
     // this.server.emit('message', message);
 
     // Publish the message to the Redis channel
-    this.redisPubSubService.publish('chat', JSON.stringify(createChatDto));
+    this.redisPubSubService.publish('chat', JSON.stringify(createMessageDto));
   }
 
   afterInit(client: Socket) {

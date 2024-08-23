@@ -25,7 +25,10 @@ export const mockedRoomResponse: RoomResponse = {
   name: mockedCreateRoomRequest.name,
   type: mockedCreateRoomRequest.type,
   description: mockedCreateRoomRequest.description,
-  createdBy: { id: faker.database.mongodbObjectId(), name: faker.person.fullName() },
+  createdBy: {
+    id: faker.database.mongodbObjectId(),
+    name: faker.person.fullName(),
+  },
   members: [
     {
       id: faker.database.mongodbObjectId(),

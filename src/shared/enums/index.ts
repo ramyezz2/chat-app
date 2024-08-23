@@ -26,5 +26,5 @@ export enum RoomRoleEnum {
 
 export enum MessageTypeEnum {
   DIRECT = 'DIRECT',
-  Room = 'Room',
+  ROOM = 'ROOM',
 }

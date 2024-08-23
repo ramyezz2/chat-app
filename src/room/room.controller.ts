@@ -58,10 +58,10 @@ export class RoomController {
     @Query() paginationDto: PaginationDto,
     @Query() filterDto: RoomFilterRequest,
   ): Promise<RoomsPagination> {
-    const planFilterDto = new RoomFilterRequest(filterDto).buildFilterRO();
+    const roomFilterDto = new RoomFilterRequest(filterDto).buildFilterRO();
     const options = {
       where: {
-        ...planFilterDto,
+        ...roomFilterDto,
         'members.member': currentUser._id,
       },
       order: { name: 'ASC' },
@@ -91,9 +91,9 @@ export class RoomController {
     @Query() paginationDto: PaginationDto,
     @Query() filterDto: RoomFilterRequest,
   ): Promise<RoomsPagination> {
-    const planFilterDto = new RoomFilterRequest(filterDto).buildFilterRO();
+    const roomFilterDto = new RoomFilterRequest(filterDto).buildFilterRO();
     const options = {
-      where: { ...planFilterDto },
+      where: { ...roomFilterDto },
       order: { name: 'ASC' },
     };
     return await this.roomService.getRoomsWithPagination({

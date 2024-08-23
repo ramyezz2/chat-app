@@ -11,6 +11,7 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import { RedisOptions } from './config/redis-cashing-options';
 import { ChatsModule } from './chat/chats.module';
+import { MessageModule } from './message/message.module';
 
 @Module({
   imports: [
@@ -21,13 +22,14 @@ import { ChatsModule } from './chat/chats.module';
         name: 'CHAT_SERVICE',
         transport: Transport.REDIS,
         options: {
-          host: 'localhost',
-          port: 6379,
+          host: environment.redisHost,
+          port: parseInt(environment.redisPort),
         },
       },
     ]),
     UserModule,
     RoomModule,
+    MessageModule,
     ChatsModule,
   ],
 

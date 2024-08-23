@@ -1,7 +1,6 @@
-import { ApiProperty, PartialType } from "@nestjs/swagger";
-import { CreateUserRequest } from "./create-user.request.dto";
-import { IsOptional } from "class-validator";
-
+import { ApiProperty, PartialType } from '@nestjs/swagger';
+import { CreateUserRequest } from './create-user.request.dto';
+import { IsOptional } from 'class-validator';
 
 export class UpdateUserRequest extends PartialType(CreateUserRequest) {
   @ApiProperty({

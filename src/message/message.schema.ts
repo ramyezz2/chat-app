@@ -15,22 +15,25 @@ class MessageEditHistoryDocument {
 })
 export class MessageDocument extends Document {
   @Prop({ required: true, enum: MessageTypeEnum })
-  type: string;
+  type: MessageTypeEnum;
 
   @Prop({ type: Types.ObjectId, ref: 'RoomDocument' })
-  roomId: Types.ObjectId;
+  room: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'UserDocument' })
-  senderId: Types.ObjectId;
+  sender: Types.ObjectId;
 
   @Prop({ type: Types.ObjectId, ref: 'UserDocument' })
-  receiverId: Types.ObjectId;
+  receiver: Types.ObjectId;
 
   @Prop({ required: true })
   content: string;
 
   @Prop([{ content: String, createdAt: Date }])
   editHistory: MessageEditHistoryDocument[];
+
+  createdAt;
+  updatedAt;
 }
 
 export const MessageSchema = SchemaFactory.createForClass(MessageDocument);
