@@ -8,7 +8,6 @@ import {
 } from 'src/room/dto';
 import { RoomTypeEnum } from 'src/shared/enums';
 
-const fakeId = new Types.ObjectId();
 export const mockedCreateRoomRequest: CreateRoomRequest = {
   name: faker.person.firstName(),
   type: RoomTypeEnum.PUBLIC,

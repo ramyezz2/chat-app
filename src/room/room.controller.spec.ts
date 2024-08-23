@@ -1,9 +1,9 @@
 import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { Test, TestingModule } from '@nestjs/testing';
+import environment from 'src/config/environment';
 import {
   mockedCreateRoomRequest,
-  mockedRoomDocumentResponse,
   mockedRoomResponse,
   mockedUpdateRoomRequest,
 } from 'src/mocks/roomMocks';
@@ -11,10 +11,11 @@ import { AppGuard } from 'src/shared/guards/app.guard';
 import { UserService } from 'src/user/user.service';
 import * as request from 'supertest';
 import { mockedFoundUser, mockToken } from '../mocks/userMocks';
+import { RoomResponse } from './dto';
 import { RoomController } from './room.controller';
 import { RoomService } from './room.service';
-import environment from 'src/config/environment';
-import { RoomResponse } from './dto';
+import { RoomTypeEnum } from 'src/shared/enums';
+import { faker } from '@faker-js/faker';
 
 describe('Room Controller', () => {
   let api;
@@ -260,6 +261,229 @@ describe('Room Controller', () => {
         .expect('Content-Type', /json/)
         .expect(HttpStatus.NOT_FOUND)
         .expect({ message: 'Room not found.', errors: ['Room not found.'] });
+    });
+  });
+
+  describe('POST api/rooms/:roomId/join-public-room', () => {
+    it('should throw error (Room not found.)', () => {
+      const mockedRoomResponseCreated = JSON.parse(
+        JSON.stringify(mockedRoomResponse),
+      );
+      const mockedRoomId = mockedRoomResponseCreated.id;
+      jest
+        .spyOn(roomService, 'getRoom')
+        .mockImplementation(() => Promise.resolve(null));
+
+      return api
+        .post(`/api/rooms/${mockedRoomId}/join-public-room`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect('Content-Type', /json/)
+        .expect(HttpStatus.NOT_FOUND)
+        .expect({ message: 'Room not found.', errors: ['Room not found.'] });
+    });
+
+    it('should throw error (You are not authorized to join this room, The room is not public.)', () => {
+      const mockedRoomResponseCreated = JSON.parse(
+        JSON.stringify(mockedRoomResponse),
+      );
+      const mockedRoomId = mockedRoomResponseCreated.id;
+
+      //set room to be private
+      mockedRoomResponseCreated.type = RoomTypeEnum.PRIVATE;
+      jest
+        .spyOn(roomService, 'getRoom')
+        .mockImplementation(() => Promise.resolve(mockedRoomResponseCreated));
+
+      return api
+        .post(`/api/rooms/${mockedRoomId}/join-public-room`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect('Content-Type', /json/)
+        .expect(HttpStatus.CONFLICT)
+        .expect({
+          message:
+            'You are not authorized to join this room, The room is not public.',
+          errors: [
+            'You are not authorized to join this room, The room is not public.',
+          ],
+        });
+    });
+
+    it('should throw error (You are already joined this room, You are the room creator.)', () => {
+      const mockedRoomResponseCreated = JSON.parse(
+        JSON.stringify(mockedRoomResponse),
+      );
+      const mockedRoomId = mockedRoomResponseCreated.id;
+
+      jest
+        .spyOn(roomService, 'getRoom')
+        .mockImplementation(() => Promise.resolve(mockedRoomResponseCreated));
+
+      // set the current member to be the creator.
+      mockedRoomResponseCreated.createdBy.id = mockedFoundUser.id;
+
+      return api
+        .post(`/api/rooms/${mockedRoomId}/join-public-room`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect('Content-Type', /json/)
+        .expect(HttpStatus.CONFLICT)
+        .expect({
+          message:
+            'You are already joined this room, You are the room creator.',
+          errors: [
+            'You are already joined this room, You are the room creator.',
+          ],
+        });
+    });
+
+    it('should throw error (You are already joined the room.)', () => {
+      const mockedRoomResponseCreated = JSON.parse(
+        JSON.stringify(mockedRoomResponse),
+      );
+      const mockedRoomId = mockedRoomResponseCreated.id;
+
+      jest
+        .spyOn(roomService, 'getRoom')
+        .mockImplementation(() => Promise.resolve(mockedRoomResponseCreated));
+
+      jest
+        .spyOn(roomService, 'isMemberInTheRoom')
+        .mockImplementation(() => Promise.resolve(true));
+
+      return api
+        .post(`/api/rooms/${mockedRoomId}/join-public-room`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect('Content-Type', /json/)
+        .expect(HttpStatus.CONFLICT)
+        .expect({
+          message: 'You are already joined the room.',
+          errors: ['You are already joined the room.'],
+        });
+    });
+
+    it('should throw error (You joined the room successfully.)', () => {
+      const mockedRoomResponseCreated = JSON.parse(
+        JSON.stringify(mockedRoomResponse),
+      );
+      const mockedRoomId = mockedRoomResponseCreated.id;
+
+      jest
+        .spyOn(roomService, 'getRoom')
+        .mockImplementation(() => Promise.resolve(mockedRoomResponseCreated));
+
+      jest
+        .spyOn(roomService, 'isMemberInTheRoom')
+        .mockImplementation(() => Promise.resolve(false));
+
+      jest.spyOn(roomService, 'joinRoom').mockImplementation(() => null);
+
+      return api
+        .post(`/api/rooms/${mockedRoomId}/join-public-room`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect(HttpStatus.CREATED)
+        .expect({});
+    });
+  });
+
+  describe('POST api/rooms/:roomId/leave', () => {
+    it('should throw error (Room not found.)', () => {
+      const mockedRoomResponseCreated = JSON.parse(
+        JSON.stringify(mockedRoomResponse),
+      );
+      const mockedRoomId = mockedRoomResponseCreated.id;
+      jest
+        .spyOn(roomService, 'getRoom')
+        .mockImplementation(() => Promise.resolve(null));
+
+      return api
+        .post(`/api/rooms/${mockedRoomId}/leave`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect('Content-Type', /json/)
+        .expect(HttpStatus.NOT_FOUND)
+        .expect({ message: 'Room not found.', errors: ['Room not found.'] });
+    });
+
+    it('should throw error (You are not authorized to leave this room, You are the room creator.)', () => {
+      const mockedRoomResponseCreated = JSON.parse(
+        JSON.stringify(mockedRoomResponse),
+      );
+      const mockedRoomId = mockedRoomResponseCreated.id;
+
+      // set the current member to be the creator.
+      mockedRoomResponseCreated.createdBy.id = mockedFoundUser.id;
+
+      jest
+        .spyOn(roomService, 'getRoom')
+        .mockImplementation(() => Promise.resolve(mockedRoomResponseCreated));
+
+      return api
+        .post(`/api/rooms/${mockedRoomId}/leave`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect('Content-Type', /json/)
+        .expect(HttpStatus.CONFLICT)
+        .expect({
+          message:
+            'You are not authorized to leave this room, You are the room creator.',
+          errors: [
+            'You are not authorized to leave this room, You are the room creator.',
+          ],
+        });
+    });
+
+    it('should throw error (You are not a member in this room.)', () => {
+      const mockedRoomResponseCreated = JSON.parse(
+        JSON.stringify(mockedRoomResponse),
+      );
+      const mockedRoomId = mockedRoomResponseCreated.id;
+
+      jest
+        .spyOn(roomService, 'getRoom')
+        .mockImplementation(() => Promise.resolve(mockedRoomResponseCreated));
+
+      jest
+        .spyOn(roomService, 'isMemberInTheRoom')
+        .mockImplementation(() => Promise.resolve(false));
+
+      return api
+        .post(`/api/rooms/${mockedRoomId}/leave`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect('Content-Type', /json/)
+        .expect(HttpStatus.CONFLICT)
+        .expect({
+          message: 'You are not a member in this room.',
+          errors: ['You are not a member in this room.'],
+        });
+    });
+
+    it('should throw error (You joined the room successfully.)', () => {
+      const mockedRoomResponseCreated = JSON.parse(
+        JSON.stringify(mockedRoomResponse),
+      );
+      const mockedRoomId = mockedRoomResponseCreated.id;
+
+      jest
+        .spyOn(roomService, 'getRoom')
+        .mockImplementation(() => Promise.resolve(mockedRoomResponseCreated));
+
+      jest
+        .spyOn(roomService, 'isMemberInTheRoom')
+        .mockImplementation(() => Promise.resolve(true));
+
+      jest.spyOn(roomService, 'leaveRoom').mockImplementation(() => null);
+
+      return api
+        .post(`/api/rooms/${mockedRoomId}/leave`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect(HttpStatus.CREATED)
+        .expect({});
     });
   });
 

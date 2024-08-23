@@ -11,30 +11,30 @@ import {
   Query,
   Req,
 } from '@nestjs/common';
-import { RoomService } from './room.service';
 import {
+  ApiBearerAuth,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
   ApiTags,
 } from '@nestjs/swagger';
-import { PaginationSimpleList } from '../shared/types/simple-list-pagination.dto';
+import { CurrentUser } from 'src/shared/decorators/user.decorator';
+import { RoomTypeEnum } from 'src/shared/enums';
+import { MainExceptionDto } from 'src/shared/exceptions/main.exception';
+import { UserDocument } from 'src/user/user.schema';
 import {
   PaginationDto,
   SimpleListPaginationDto,
 } from '../shared/helpers/pagination';
 import { checkObjectIdPipe } from '../shared/pipes/check-objectId.pipe';
-import { CurrentUser } from 'src/shared/decorators/user.decorator';
-import { MainExceptionDto } from 'src/shared/exceptions/main.exception';
-import { UserDocument } from 'src/user/user.schema';
+import { PaginationSimpleList } from '../shared/types/simple-list-pagination.dto';
 import {
-  RoomResponse,
-  RoomFilterRequest,
-  RoomsPagination,
   CreateRoomRequest,
+  RoomFilterRequest,
+  RoomResponse,
+  RoomsPagination,
   UpdateRoomRequest,
 } from './dto';
-import { RoomTypeEnum } from 'src/shared/enums';
+import { RoomService } from './room.service';
 
 @ApiTags('rooms')
 @Controller('rooms')
@@ -348,14 +348,14 @@ export class RoomController {
         'You are not authorized to join this room, The room is not public.';
       throw new HttpException(
         { message, errors: [message] },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.CONFLICT,
       );
     }
 
     //check if the member is the creator
     if (room.createdBy.id.toString() === currentUser.id.toString()) {
       const message =
-        'You are not authorized to join this room, You are the room creator.';
+        'You are already joined this room, You are the room creator.';
       throw new HttpException(
         { message, errors: [message] },
         HttpStatus.CONFLICT,
@@ -371,7 +371,7 @@ export class RoomController {
       const message = 'You are already joined the room.';
       throw new HttpException(
         { message, errors: [message] },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.CONFLICT,
       );
     }
 
@@ -433,7 +433,7 @@ export class RoomController {
       const message = 'You are not a member in this room.';
       throw new HttpException(
         { message, errors: [message] },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.CONFLICT,
       );
     }
 

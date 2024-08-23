@@ -9,6 +9,7 @@ import {
   mockedCreateRoomRequest,
   mockedUpdateRoomRequest,
 } from 'src/mocks/roomMocks';
+import { generateMockedUser, MockedRequest } from 'src/mocks/userMocks';
 import {
   closeMongoConnection,
   DbModule,
@@ -17,7 +18,7 @@ import { UserDocument, UserSchema } from '../user/user.schema';
 import { CreateRoomRequest, UpdateRoomRequest } from './dto';
 import { RoomDocument, RoomSchema } from './room.schema';
 import { RoomService } from './room.service';
-import { generateMockedUser, MockedRequest } from 'src/mocks/userMocks';
+
 describe('RoomService', () => {
   let connection: Connection;
   let roomService: RoomService;

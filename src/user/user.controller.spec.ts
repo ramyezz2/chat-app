@@ -1,22 +1,22 @@
-import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import * as request from 'supertest';
 import { faker } from '@faker-js/faker';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { HttpStatus, INestApplication, ValidationPipe } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { Test } from '@nestjs/testing';
+import environment from 'src/config/environment';
 import {
   mockedCreateUserRequest,
   mockedFoundUser,
-  mockedGuard,
   mockedLoginCredentials,
   mockedMemberResponse,
   mockedUserResponse,
   mockToken,
 } from 'src/mocks/userMocks';
 import { AppGuard } from 'src/shared/guards/app.guard';
+import * as request from 'supertest';
+import TestAgent from 'supertest/lib/agent';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
-import environment from 'src/config/environment';
-import TestAgent from 'supertest/lib/agent';
-import { APP_GUARD } from '@nestjs/core';
 
 describe('UserController', () => {
   let api: TestAgent;
@@ -46,6 +46,16 @@ describe('UserController', () => {
             getUserById: jest.fn(),
             getUsersSimpleList: jest.fn(),
             logout: jest.fn(),
+          },
+        },
+        {
+          provide: CACHE_MANAGER,
+          useValue: {
+            // Mock the CACHE_MANAGER
+            get: jest.fn(),
+            set: jest.fn(),
+            del: jest.fn(),
+            reset: jest.fn(),
           },
         },
       ],

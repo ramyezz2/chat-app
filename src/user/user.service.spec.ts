@@ -18,6 +18,7 @@ import {
 import { UserDocument, UserSchema } from './user.schema';
 import { UserService } from './user.service';
 import { buildUserResponse } from './utils';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 describe('UserService', () => {
   let connection: Connection;
@@ -32,7 +33,19 @@ describe('UserService', () => {
           { name: UserDocument.name, schema: UserSchema },
         ]),
       ],
-      providers: [UserService],
+      providers: [
+        UserService,
+        {
+          provide: CACHE_MANAGER,
+          useValue: {
+            // Mock the CACHE_MANAGER
+            get: jest.fn(),
+            set: jest.fn(),
+            del: jest.fn(),
+            reset: jest.fn(),
+          },
+        },
+      ],
     }).compile();
 
     connection = await module.get(getConnectionToken());
