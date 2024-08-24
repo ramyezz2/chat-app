@@ -4,8 +4,15 @@ import {
   MongooseModule,
 } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Connection, Model, Types } from 'mongoose';
+import { Connection, Model } from 'mongoose';
+import {
+  mockedCreateDirectMessageRequest,
+  mockedCreateRoomMessageRequest,
+  mockedUpdateMessageRequest,
+} from 'src/mocks/messageMocks';
 import { generateMockedUser, MockedRequest } from 'src/mocks/userMocks';
+import { RoomDocument, RoomSchema } from 'src/room/room.schema';
+import { MessageTypeEnum } from 'src/shared/enums';
 import {
   closeMongoConnection,
   DbModule,
@@ -18,11 +25,6 @@ import {
 } from './dto';
 import { MessageDocument, MessageSchema } from './message.schema';
 import { MessageService } from './message.service';
-import {
-  mockedCreateDirectMessageRequest,
-  mockedUpdateMessageRequest,
-} from 'src/mocks/messageMocks';
-import { RoomDocument, RoomSchema } from 'src/room/room.schema';
 
 describe('MessageService', () => {
   let connection: Connection;
@@ -72,6 +74,7 @@ describe('MessageService', () => {
       // Add message in test db
       message = await messageRepository.create({
         ...createDirectMessageRequest,
+        type: MessageTypeEnum.DIRECT,
         sender: mockedUserSender._id,
         receiver: mockedUserReceiver._id,
       });
@@ -118,8 +121,8 @@ describe('MessageService', () => {
       expect(messagesFound.data[0].id).toBe(message.id);
       expect(messagesFound.data[0].content).toBe(message.content);
       expect(messagesFound.data[0].type).toBe(message.type);
-      expect(messagesFound.data[0].sender.id).toBe(message.sender.id);
-      expect(messagesFound.data[0].receiver.id).toBe(message.receiver.id);
+      expect(messagesFound.data[0].sender.id).toBe(mockedUserSender.id);
+      expect(messagesFound.data[0].receiver.id).toBe(mockedUserReceiver.id);
 
       expect(typeof messagesFound.currentPage).toBe('number');
       expect(typeof messagesFound.itemsPerPage).toBe('number');
@@ -142,13 +145,13 @@ describe('MessageService', () => {
 
     afterAll(async () => {
       await messageRepository.deleteOne({ _id: message._id });
-      await userRepository.deleteOne({
+      await userRepository.deleteMany({
         _id: { $in: [mockedUserSender._id, mockedUserReceiver._id] },
       });
     });
   });
 
-  describe('create', () => {
+  describe('create direct message', () => {
     let mockedUser: UserDocument;
     let messageId: string;
 
@@ -165,11 +168,48 @@ describe('MessageService', () => {
 
       const messageFound = await messageService.createDirectMessage({
         currentUser: mockedUser,
+        dto: { ...createMessageRequest, receiverId: mockedUser.id },
+      });
+      expect(messageFound).toBeDefined();
+      expect(messageFound).toBeInstanceOf(Object);
+      expect(messageFound.id).toBeDefined();
+      expect(messageFound.type).toBe(MessageTypeEnum.DIRECT);
+      expect(messageFound.content).toBe(createMessageRequest.content);
+      expect(messageFound.receiver.id).toBe(mockedUser.id);
+      expect(messageFound.sender.id).toBe(mockedUser.id);
+
+      messageId = messageFound.id;
+    });
+
+    afterAll(async () => {
+      await messageRepository.deleteOne({ _id: messageId });
+      await userRepository.deleteOne({ _id: mockedUser._id });
+    });
+  });
+
+  describe('create room message', () => {
+    let mockedUser: UserDocument;
+    let messageId: string;
+
+    beforeAll(async () => {
+      // Add user in test db
+      const { user } = await generateMockedUser(userRepository);
+      mockedUser = user;
+    });
+
+    it('should create Message', async () => {
+      const createMessageRequest: CreateRoomMessageRequest = JSON.parse(
+        JSON.stringify(mockedCreateRoomMessageRequest),
+      );
+
+      const messageFound = await messageService.createRoomMessage({
+        currentUser: mockedUser,
         dto: createMessageRequest,
       });
       expect(messageFound).toBeDefined();
       expect(messageFound).toBeInstanceOf(Object);
       expect(messageFound.id).toBeDefined();
+      expect(messageFound.type).toBe(MessageTypeEnum.ROOM);
       expect(messageFound.content).toBe(createMessageRequest.content);
 
       messageId = messageFound.id;
@@ -199,7 +239,9 @@ describe('MessageService', () => {
       // Add message in test db
       message = await messageRepository.create({
         ...createMessageRequest,
-        sender: new Types.ObjectId(user.id),
+        type: MessageTypeEnum.DIRECT,
+        sender: mockedUser._id,
+        receiver: mockedUser._id,
       });
     });
 
@@ -236,7 +278,9 @@ describe('MessageService', () => {
       // Add message in test db
       message = await messageRepository.create({
         ...createMessageRequest,
-        sender: new Types.ObjectId(user.id),
+        type: MessageTypeEnum.DIRECT,
+        sender: mockedUser._id,
+        receiver: mockedUser._id,
       });
     });
 

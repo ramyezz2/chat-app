@@ -16,6 +16,7 @@ import { mockedFoundUser, mockToken } from '../mocks/userMocks';
 import { MessageResponse } from './dto';
 import { MessageController } from './message.controller';
 import { MessageService } from './message.service';
+import { mockedRoomResponse } from 'src/mocks/roomMocks';
 
 describe('Message Controller', () => {
   let api;
@@ -76,10 +77,90 @@ describe('Message Controller', () => {
     expect(messageService).toBeDefined();
   });
 
-  describe('GET api/messages', () => {
-    it('should get messages with pagination data', async () => {
+  describe('GET api/messages/direct/:memberId', () => {
+    it('should throw error (Member not found.)', async () => {
+      const memberId = mockedFoundUser.id;
+      jest
+        .spyOn(messageService, 'checkMemberExist')
+        .mockImplementation(() => Promise.resolve(false));
       const messages = await api
-        .get(`/api/messages`)
+        .get(`/api/messages/direct/${memberId}`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect(HttpStatus.NOT_FOUND)
+        .expect({
+          message: 'Member not found.',
+          errors: ['Member not found.'],
+        });
+      expect(messages.body).toBeInstanceOf(Object);
+    });
+    it('should get messages with pagination data', async () => {
+      const memberId = mockedFoundUser.id;
+      jest
+        .spyOn(messageService, 'checkMemberExist')
+        .mockImplementation(() => Promise.resolve(true));
+      
+      const messages = await api
+        .get(`/api/messages/direct/${memberId}`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect(HttpStatus.OK);
+      expect(messages.body).toBeInstanceOf(Object);
+    });
+  });
+
+  describe('GET api/messages/rooms/:roomId', () => {
+    it('should throw error (Room not found.)', async () => {
+      const roomId = mockedRoomResponse.id;
+      jest
+        .spyOn(messageService, 'checkRoomExist')
+        .mockImplementation(() => Promise.resolve(false));
+      const messages = await api
+        .get(`/api/messages/rooms/${roomId}`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect(HttpStatus.NOT_FOUND)
+        .expect({
+          message: 'Room not found.',
+          errors: ['Room not found.'],
+        });
+      expect(messages.body).toBeInstanceOf(Object);
+    });
+
+    it('should throw error (You are not a member of this room.)', async () => {
+      const roomId = mockedRoomResponse.id;
+      jest
+        .spyOn(messageService, 'checkRoomExist')
+        .mockImplementation(() => Promise.resolve(true));
+
+      jest
+        .spyOn(messageService, 'isMemberInTheRoom')
+        .mockImplementation(() => Promise.resolve(false));
+
+      const messages = await api
+        .get(`/api/messages/rooms/${roomId}`)
+        .set('Accept', 'application/json')
+        .set('Authorization', `Bearer ${mockedAccessToken}`)
+        .expect(HttpStatus.CONFLICT)
+        .expect({
+          message: 'You are not a member of this room.',
+          errors: ['You are not a member of this room.'],
+        });
+      expect(messages.body).toBeInstanceOf(Object);
+    });
+
+    it('should get messages with pagination data', async () => {
+      const roomId = mockedRoomResponse.id;
+      jest
+        .spyOn(messageService, 'checkRoomExist')
+        .mockImplementation(() => Promise.resolve(true));
+
+      jest
+        .spyOn(messageService, 'isMemberInTheRoom')
+        .mockImplementation(() => Promise.resolve(true));
+
+      const messages = await api
+        .get(`/api/messages/rooms/${roomId}`)
         .set('Accept', 'application/json')
         .set('Authorization', `Bearer ${mockedAccessToken}`)
         .expect(HttpStatus.OK);
@@ -205,7 +286,7 @@ describe('Message Controller', () => {
         .expect(HttpStatus.OK);
       expect(response.body).toBeInstanceOf(Object);
       expect(response.body.id).toBe(mockedMessageResponseCreated.id);
-      expect(response.body.content).toBe(mockedMessageResponseCreated.content);
+      expect(response.body.content).toBe(content);
     });
   });
 

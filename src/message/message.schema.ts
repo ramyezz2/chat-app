@@ -41,8 +41,8 @@ export const MessageSchema = SchemaFactory.createForClass(MessageDocument);
 MessageSchema.set('toJSON', {
   transform: function (doc, ret) {
     ret.id = ret._id;
-    delete ret.updatedAt;
-    delete ret.createdAt;
+    // delete ret.updatedAt;
+    // delete ret.createdAt;
     delete ret._id;
     delete ret.__v;
   },

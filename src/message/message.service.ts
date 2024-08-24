@@ -54,7 +54,7 @@ export class MessageService {
       sort: options?.order,
       query: options?.where,
       appUrl: appUrl,
-      populate: ['createdBy', 'members.member'],
+      populate: ['receiver', 'sender', 'room'],
     });
 
     paginatedData.data = paginatedData.data.map((message) => {
@@ -68,7 +68,7 @@ export class MessageService {
       .findOne({
         _id: id,
       })
-      .populate(['createdBy', 'members.member']);
+      .populate(['receiver', 'sender', 'room']);
     if (!message) {
       return null;
     }

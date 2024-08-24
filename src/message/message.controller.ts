@@ -48,22 +48,32 @@ export class MessageController {
     description: 'Get direct messages with pagination',
   })
   @ApiBearerAuth()
-  @Get('direct/:receiverId')
+  @Get('direct/:memberId')
   async getMemberMessagesWithPagination(
     @CurrentUser() currentUser,
-    @Param('receiverId', checkObjectIdPipe) receiverId: string,
+    @Param('memberId', checkObjectIdPipe) memberId: string,
     @Req() request,
     @Query() paginationDto: PaginationDto,
     @Query() filterDto: MessageFilterRequest,
   ): Promise<MessagesPagination> {
+    //check if member exist
+    const memberExist = await this.messageService.checkMemberExist({
+      memberId,
+    });
+    if (!memberExist) {
+      const message = 'Member not found.';
+      throw new HttpException(
+        { message, errors: [message] },
+        HttpStatus.NOT_FOUND,
+      );
+    }
     const messageFilterDto = new MessageFilterRequest(
       filterDto,
     ).buildFilterRO();
     const options = {
       where: {
         ...messageFilterDto,
-        sender: currentUser._id,
-        receiver: new Types.ObjectId(receiverId),
+        $or: [{ sender: currentUser._id }, { receiver: currentUser._id }],
       },
       order: { createdAt: 'DESC' },
     };
@@ -124,7 +134,6 @@ export class MessageController {
     const options = {
       where: {
         ...messageFilterDto,
-        sender: currentUser._id,
         room: new Types.ObjectId(roomId),
       },
       order: { createdAt: 'DESC' },
