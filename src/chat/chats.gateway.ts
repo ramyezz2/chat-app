@@ -12,6 +12,8 @@ import { CreateMessageDto } from './dto/create-message.dto';
 import { Server, Socket } from 'socket.io';
 import { wsAuthMiddleware } from 'src/shared/middleware/ws-auth.middleware';
 import { RedisPubSubService } from './redis-pubsub.service';
+import { CurrentUser } from 'src/shared/decorators/user.decorator';
+import { UserDocument } from 'src/user/user.schema';
 
 @WebSocketGateway(3002, { namespace: '/chats', cors: true })
 export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -28,7 +30,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
     });
   }
 
-  handleConnection(client: Socket) {
+  handleConnection(client: Socket, @CurrentUser() user: UserDocument) {
     console.log('New client connected', client.id);
 
     //The event data will only be broadcast to every socket but the sender.
@@ -57,6 +59,7 @@ export class ChatsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   async create(
     @ConnectedSocket() client,
     @MessageBody() createMessageDto: CreateMessageDto,
+    @CurrentUser() user: UserDocument,
   ) {
     const senderId = client.handshake.user._id.toString();
     const chat = await this.chatsService.create(senderId, createMessageDto);
