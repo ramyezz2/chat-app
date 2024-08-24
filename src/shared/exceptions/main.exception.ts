@@ -8,6 +8,6 @@ export class MainExceptionDto {
   })
   message: string;
 
-  @ApiProperty({ type: Object, description: 'error object' })
+  @ApiProperty({ type: Object, description: 'error object', example: ['Error Message'] })
   errors: [];
 }

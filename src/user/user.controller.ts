@@ -54,8 +54,6 @@ export class UserController {
       'Email not verified yet, Please check your email to complete verification process.',
   })
   @SkipAuth()
-  @CacheKey('user')
-  @CacheTTL(60)
   @Post('login')
   async login(@Body() dto: LoginUserRequest): Promise<UserResponse> {
     dto.email = dto.email.trim().toLowerCase();
@@ -78,6 +76,8 @@ export class UserController {
     description: 'get user data',
   })
   @ApiBearerAuth()
+  // @CacheKey('user')
+  // @CacheTTL(60)
   @Get('me')
   async findMe(
     @CurrentUser() currentUser: UserDocument,

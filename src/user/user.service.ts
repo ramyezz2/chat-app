@@ -1,4 +1,4 @@
-import { HttpException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import * as argon2 from 'argon2';
 import * as jwt from 'jsonwebtoken';
@@ -40,7 +40,7 @@ export class UserService {
     await this.cacheManager.set(user.id, {
       user,
       accessToken: userResponse.accessToken,
-    }); // ? Set data from the cache
+    }); // ? Set data to the cache
 
     return userResponse;
   }
@@ -166,9 +166,9 @@ export class UserService {
       _id: new Types.ObjectId(id),
     });
     if (!user) {
-      const errors = ['Not found'];
-      throw new HttpException({ errors }, 401);
+      return null;
     }
+
     return buildMemberResponse({ member: user });
   }
 
