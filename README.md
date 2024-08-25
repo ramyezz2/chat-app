@@ -26,11 +26,20 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
-## Installation
+## Installation Locally (install mongodb and redis servers is required)
 
 ```bash
 $ npm install
 ```
+
+## Installation Locally with docker compose (install docker and docker-compose)
+
+```bash
+$ docker-compose up -d
+```
+
+## Feel free to user the environment variables in .env.example file to configure your app and run it locally or you can use the docker-compose.yml file to run the app with docker.
+
 
 ## Running the app
 
@@ -39,6 +48,7 @@ $ npm install
 $ npm run start
 
 # watch mode
+$ npm run watch
 $ npm run start:dev
 
 # production mode
@@ -60,14 +70,10 @@ $ npm run test:cov
 
 ## Support
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+Please contact me on linkedin: https://www.linkedin.com/in/ramyezz2 or email: ramyezz2@gmail.com
 
 ## Stay in touch
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+- Author - [Ramy Ezz](https://www.linkedin.com/in/ramyezz2)
 
 ## License
-
-Nest is [MIT licensed](LICENSE).
