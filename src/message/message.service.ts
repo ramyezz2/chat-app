@@ -6,6 +6,7 @@ import { RoomDocument } from 'src/room/room.schema';
 import { pagination, PaginationDto } from '../shared/helpers/pagination';
 import { UserDocument } from '../user/user.schema';
 import {
+  ContactsListPagination,
   CreateDirectMessageRequest,
   CreateRoomMessageRequest,
   MessageResponse,
@@ -15,6 +16,7 @@ import {
 import { MessageDocument } from './message.schema';
 import { buildMessageResponse } from './utils';
 import { MessageTypeEnum } from 'src/shared/enums';
+import { buildContactListResponse } from './utils/build-message-responses.helper';
 
 @Injectable()
 export class MessageService {
@@ -36,7 +38,12 @@ export class MessageService {
     paginationDto: PaginationDto;
     options?: { where?: {}; order?: {} };
   }): Promise<MessagesPagination> {
-    const { page, limit } = paginationDto;
+    let { page, limit } = paginationDto;
+    page = page ? parseInt(page.toString()) : 1;
+    limit = limit ? parseInt(limit.toString()) : 10;
+    page = page <= 0 ? 1 : page;
+    limit = limit <= 0 ? 1 : limit;
+
     const appUrl = `${request.protocol}://${request.get('host')}${
       request?._parsedUrl?.pathname
     }`;
@@ -165,5 +172,111 @@ export class MessageService {
     return await this.messageRepository.findOneAndDelete({
       _id,
     });
+  }
+
+  async getContactsListWithPagination({
+    request,
+    currentUser,
+    paginationDto,
+  }: {
+    request;
+    currentUser: UserDocument;
+    paginationDto: PaginationDto;
+  }): Promise<ContactsListPagination> {
+    let { page, limit } = paginationDto;
+    page = page ? parseInt(page.toString()) : 1;
+    limit = limit ? parseInt(limit.toString()) : 10;
+    page = page <= 0 ? 1 : page;
+    limit = limit <= 0 ? 1 : limit;
+
+    const appUrl = `${request.protocol}://${request.get('host')}${
+      request?._parsedUrl?.pathname
+    }`;
+
+    const sort: any = { createdAt: -1 };
+    const currentUserId = currentUser._id;
+    const contactListPipeline = [
+      {
+        $lookup: {
+          from: 'room',
+          localField: 'room',
+          foreignField: '_id',
+          as: 'room',
+        },
+      },
+      {
+        $unwind: {
+          path: '$room',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $match: {
+          $or: [
+            { sender: currentUserId },
+            { receiver: currentUserId },
+            { 'room.members.member': currentUserId },
+          ],
+        },
+      },
+      {
+        $group: {
+          _id: {
+            type: '$type',
+            room: '$room',
+            sender: '$sender',
+            receiver: '$receiver',
+          },
+          lastMessage: { $last: '$$ROOT' },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+          type: '$_id.type',
+          room: '$_id.room',
+          sender: '$_id.sender',
+          receiver: '$_id.receiver',
+          content: '$lastMessage.content',
+          createdAt: '$lastMessage.createdAt',
+        },
+      },
+    ];
+
+    const [contactList, paginatedCount] = await Promise.all([
+      this.messageRepository.aggregate([
+        ...contactListPipeline,
+        { $sort: { createdAt: -1 } },
+        { $sort: sort },
+        { $skip: limit * (page - 1) },
+        { $limit: limit },
+      ]),
+      this.messageRepository.aggregate([
+        ...contactListPipeline,
+        { $count: 'count' },
+      ]),
+    ]);
+
+    const docsCount = paginatedCount[0] ? paginatedCount[0].count : 0;
+    const pagesCount = docsCount / limit;
+    const totalPages = Math.round(pagesCount + 0.4);
+    const paginatedData = {
+      data: contactList?.map((contact) => {
+        return buildContactListResponse({
+          contact,
+          currentUserId: currentUserId.toString()
+        });
+      }),
+      itemsPerPage: contactList.length,
+      totalItems: docsCount,
+      currentPage: page,
+      totalPages,
+      prevLink: `${appUrl}?page=${page > 1 ? page - 1 : 1}&limit=${limit}`,
+      selfLink: `${appUrl}?page=${page}&limit=${limit}`,
+      nextLink: `${appUrl}?page=${
+        page >= totalPages ? totalPages : page + 1
+      }&limit=${limit}`,
+    };
+    return paginatedData;
   }
 }

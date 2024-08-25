@@ -4,6 +4,7 @@ import { UserDocument } from 'src/user/user.schema';
 import { buildMemberSimpleListResponse } from 'src/user/utils';
 import { MessageResponse } from '../dto/message.response';
 import { MessageDocument } from '../message.schema';
+import { ContactListResponse } from '../dto';
 
 export const buildMessageResponse = ({
   message,
@@ -31,5 +32,31 @@ export const buildMessageResponse = ({
         createdAt: item.createdAt,
       };
     }),
+  };
+};
+
+export const buildContactListResponse = ({
+  contact,
+  currentUserId,
+}: {
+  currentUserId: string;
+  contact: MessageDocument;
+}): ContactListResponse => {
+  const member =
+    contact.receiver._id.toString() == currentUserId
+      ? (contact.sender as unknown as UserDocument)
+      : (contact.receiver as unknown as UserDocument);
+
+  return {
+    // id: contact.id,
+    content: contact.content || '',
+    type: contact.type,
+    member: buildMemberSimpleListResponse({
+      member,
+    }),
+    room: buildRoomSimpleListResponse({
+      room: contact.room as unknown as RoomDocument,
+    }),
+    createdAt: contact.createdAt,
   };
 };

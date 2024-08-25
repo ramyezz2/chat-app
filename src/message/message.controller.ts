@@ -18,12 +18,14 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Types } from 'mongoose';
+import { RedisSocketService } from 'src/chat/redis-socket.service';
 import { CurrentUser } from 'src/shared/decorators/user.decorator';
 import { MainExceptionDto } from 'src/shared/exceptions/main.exception';
 import { UserDocument } from 'src/user/user.schema';
 import { PaginationDto } from '../shared/helpers/pagination';
 import { checkObjectIdPipe } from '../shared/pipes/check-objectId.pipe';
 import {
+  ContactsListPagination,
   CreateDirectMessageRequest,
   CreateRoomMessageRequest,
   MessageFilterRequest,
@@ -32,7 +34,7 @@ import {
   UpdateMessageRequest,
 } from './dto';
 import { MessageService } from './message.service';
-import { RedisSocketService } from 'src/chat/redis-socket.service';
+import { MessageTypeEnum } from 'src/shared/enums';
 
 @ApiTags('messages')
 @Controller('messages')
@@ -41,6 +43,7 @@ export class MessageController {
     private readonly messageService: MessageService,
     private readonly redisSocketService: RedisSocketService,
   ) {}
+
   @ApiOperation({
     description: 'Get direct messages with pagination',
     summary: 'Get direct messages with pagination',
@@ -54,7 +57,7 @@ export class MessageController {
   @ApiBearerAuth()
   @Get('direct/:memberId')
   async getMemberMessagesWithPagination(
-    @CurrentUser() currentUser,
+    @CurrentUser() currentUser: UserDocument,
     @Param('memberId', checkObjectIdPipe) memberId: string,
     @Req() request,
     @Query() paginationDto: PaginationDto,
@@ -77,6 +80,7 @@ export class MessageController {
     const options = {
       where: {
         ...messageFilterDto,
+        type: MessageTypeEnum.DIRECT,
         $or: [{ sender: currentUser._id }, { receiver: currentUser._id }],
       },
       order: { createdAt: 'DESC' },
@@ -101,7 +105,7 @@ export class MessageController {
   @ApiBearerAuth()
   @Get('rooms/:roomId')
   async getMessagesWithPagination(
-    @CurrentUser() currentUser,
+    @CurrentUser() currentUser: UserDocument,
     @Param('roomId', checkObjectIdPipe) roomId: string,
     @Req() request,
     @Query() paginationDto: PaginationDto,
@@ -138,6 +142,7 @@ export class MessageController {
     const options = {
       where: {
         ...messageFilterDto,
+        type: MessageTypeEnum.ROOM,
         room: new Types.ObjectId(roomId),
       },
       order: { createdAt: 'DESC' },
@@ -161,7 +166,7 @@ export class MessageController {
   @ApiBearerAuth()
   @Post('direct')
   async createDirectMessage(
-    @CurrentUser() currentUser,
+    @CurrentUser() currentUser: UserDocument,
     @Body() dto: CreateDirectMessageRequest,
   ): Promise<MessageResponse> {
     //check if receiver exist
@@ -176,7 +181,18 @@ export class MessageController {
       );
     }
 
-    return this.messageService.createDirectMessage({ currentUser, dto });
+    const message = await this.messageService.createDirectMessage({
+      currentUser,
+      dto,
+    });
+
+    // Publish the message to Redis for the specific member
+    this.redisSocketService.publishMessageToMember({
+      memberId: dto.receiverId,
+      message,
+    });
+
+    return message;
   }
 
   @ApiOperation({
@@ -191,7 +207,7 @@ export class MessageController {
   @ApiBearerAuth()
   @Post('room')
   async createRoomMessage(
-    @CurrentUser() currentUser,
+    @CurrentUser() currentUser: UserDocument,
     @Body() dto: CreateRoomMessageRequest,
   ): Promise<MessageResponse> {
     //check if room exist
@@ -241,7 +257,7 @@ export class MessageController {
   @ApiBearerAuth()
   @Patch(':messageId')
   async update(
-    @CurrentUser() currentUser,
+    @CurrentUser() currentUser: UserDocument,
     @Param('messageId', checkObjectIdPipe) id: string,
     @Body() dto: UpdateMessageRequest,
   ): Promise<MessageResponse> {
@@ -310,5 +326,28 @@ export class MessageController {
     await this.messageService.deleteOne({ _id: id });
 
     return message;
+  }
+
+  @ApiOperation({
+    description: 'Get contact list with pagination',
+    summary: 'Get contact list with pagination',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: ContactsListPagination,
+    description: 'Contact list',
+  })
+  @ApiBearerAuth()
+  @Get('contacts-list')
+  async getContactsListWithPagination(
+    @CurrentUser() currentUser: UserDocument,
+    @Req() request,
+    @Query() paginationDto: PaginationDto,
+  ): Promise<ContactsListPagination> {
+    return this.messageService.getContactsListWithPagination({
+      request,
+      currentUser,
+      paginationDto,
+    });
   }
 }
