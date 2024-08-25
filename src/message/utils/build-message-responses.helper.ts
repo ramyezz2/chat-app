@@ -4,6 +4,7 @@ import { UserDocument } from 'src/user/user.schema';
 import { buildMemberSimpleListResponse } from 'src/user/utils';
 import { MessageResponse } from '../dto/message.response';
 import { MessageDocument } from '../message.schema';
+import { ContactListResponse } from '../dto';
 
 export const buildMessageResponse = ({
   message,
@@ -31,5 +32,24 @@ export const buildMessageResponse = ({
         createdAt: item.createdAt,
       };
     }),
+  };
+};
+
+export const buildContactListResponse = ({
+  contact,
+}: {
+  contact: MessageDocument;
+}): ContactListResponse => {
+  return {
+    // id: contact.id,
+    content: contact.content || '',
+    type: contact.type,
+    member: buildMemberSimpleListResponse({
+      member: contact.sender as unknown as UserDocument,
+    }),
+    room: buildRoomSimpleListResponse({
+      room: contact.room as unknown as RoomDocument,
+    }),
+    createdAt: contact.createdAt,
   };
 };

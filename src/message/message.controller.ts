@@ -18,12 +18,14 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Types } from 'mongoose';
+import { RedisSocketService } from 'src/chat/redis-socket.service';
 import { CurrentUser } from 'src/shared/decorators/user.decorator';
 import { MainExceptionDto } from 'src/shared/exceptions/main.exception';
 import { UserDocument } from 'src/user/user.schema';
 import { PaginationDto } from '../shared/helpers/pagination';
 import { checkObjectIdPipe } from '../shared/pipes/check-objectId.pipe';
 import {
+  ContactsListPagination,
   CreateDirectMessageRequest,
   CreateRoomMessageRequest,
   MessageFilterRequest,
@@ -32,7 +34,6 @@ import {
   UpdateMessageRequest,
 } from './dto';
 import { MessageService } from './message.service';
-import { RedisSocketService } from 'src/chat/redis-socket.service';
 
 @ApiTags('messages')
 @Controller('messages')
@@ -176,7 +177,18 @@ export class MessageController {
       );
     }
 
-    return this.messageService.createDirectMessage({ currentUser, dto });
+    const message = await this.messageService.createDirectMessage({
+      currentUser,
+      dto,
+    });
+
+    // Publish the message to Redis for the specific member
+    this.redisSocketService.publishMessageToMember({
+      memberId: dto.receiverId,
+      message,
+    });
+
+    return message;
   }
 
   @ApiOperation({
@@ -310,5 +322,26 @@ export class MessageController {
     await this.messageService.deleteOne({ _id: id });
 
     return message;
+  }
+
+  @ApiOperation({ summary: 'Get contact list' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: ContactsListPagination,
+    description: 'Contact list',
+  })
+  @ApiBearerAuth()
+  @Get('contacts-list')
+  async getContactsListWithPagination(
+    @Req() request,
+    @CurrentUser() currentUser: UserDocument,
+    @Query() paginationDto: PaginationDto,
+  ): Promise<ContactsListPagination> {
+    const contacts = await this.messageService.getContactsListWithPagination({
+      request,
+      currentUser,
+      paginationDto,
+    });
+    return contacts;
   }
 }

@@ -5,6 +5,7 @@ import { MessageController } from './message.controller';
 import { MessageDocument, MessageSchema } from './message.schema';
 import { MessageService } from './message.service';
 import { RoomDocument, RoomSchema } from 'src/room/room.schema';
+import { RedisSocketService } from 'src/chat/redis-socket.service';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { RoomDocument, RoomSchema } from 'src/room/room.schema';
     ]),
   ],
   controllers: [MessageController],
-  providers: [MessageService],
+  providers: [MessageService, RedisSocketService],
   exports: [MessageService],
 })
 export class MessageModule {}

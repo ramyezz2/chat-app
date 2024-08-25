@@ -48,6 +48,7 @@ export class UserService {
   async findByIdForGuard({ id }: { id: string }): Promise<UserDocument> {
     const cashedUser = await this.cacheManager.get<{ user: UserDocument }>(id); // ? Retrieve data from the cache
     if (cashedUser) {
+      cashedUser.user._id = new Types.ObjectId(id);
       return cashedUser.user;
     } else {
       const user = await this.userRepository.findOne({

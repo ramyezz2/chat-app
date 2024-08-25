@@ -95,4 +95,16 @@ export class RedisSocketService {
       });
     });
   }
+
+  async publishMessageToMember({
+    memberId,
+    message,
+  }: {
+    memberId: string;
+    message: any;
+  }) {
+    if (await this.isUserOnline(memberId)) {
+      this.publisher.publish(`user:${memberId}:messages`, message);
+    }
+  }
 }
