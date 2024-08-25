@@ -38,7 +38,12 @@ export class MessageService {
     paginationDto: PaginationDto;
     options?: { where?: {}; order?: {} };
   }): Promise<MessagesPagination> {
-    const { page, limit } = paginationDto;
+    let { page, limit } = paginationDto;
+    page = page ? parseInt(page.toString()) : 1;
+    limit = limit ? parseInt(limit.toString()) : 10;
+    page = page <= 0 ? 1 : page;
+    limit = limit <= 0 ? 1 : limit;
+
     const appUrl = `${request.protocol}://${request.get('host')}${
       request?._parsedUrl?.pathname
     }`;
@@ -183,6 +188,7 @@ export class MessageService {
     limit = limit ? parseInt(limit.toString()) : 10;
     page = page <= 0 ? 1 : page;
     limit = limit <= 0 ? 1 : limit;
+
     const appUrl = `${request.protocol}://${request.get('host')}${
       request?._parsedUrl?.pathname
     }`;
@@ -199,7 +205,10 @@ export class MessageService {
         },
       },
       {
-        $unwind: '$room',
+        $unwind: {
+          path: '$room',
+          preserveNullAndEmptyArrays: true,
+        },
       },
       {
         $match: {
@@ -255,6 +264,7 @@ export class MessageService {
       data: contactList?.map((contact) => {
         return buildContactListResponse({
           contact,
+          currentUserId: currentUserId.toString()
         });
       }),
       itemsPerPage: contactList.length,

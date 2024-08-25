@@ -45,29 +45,6 @@ export class MessageController {
   ) {}
 
   @ApiOperation({
-    description: 'Get contact list with pagination',
-    summary: 'Get contact list with pagination',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    type: ContactsListPagination,
-    description: 'Contact list',
-  })
-  @ApiBearerAuth()
-  @Get('contacts-list')
-  async getContactsListWithPagination(
-    @CurrentUser() currentUser: UserDocument,
-    @Req() request,
-    @Query() paginationDto: PaginationDto,
-  ): Promise<ContactsListPagination> {
-    return this.messageService.getContactsListWithPagination({
-      request,
-      currentUser,
-      paginationDto,
-    });
-  }
-
-  @ApiOperation({
     description: 'Get direct messages with pagination',
     summary: 'Get direct messages with pagination',
   })
@@ -349,5 +326,28 @@ export class MessageController {
     await this.messageService.deleteOne({ _id: id });
 
     return message;
+  }
+
+  @ApiOperation({
+    description: 'Get contact list with pagination',
+    summary: 'Get contact list with pagination',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: ContactsListPagination,
+    description: 'Contact list',
+  })
+  @ApiBearerAuth()
+  @Get('contacts-list')
+  async getContactsListWithPagination(
+    @CurrentUser() currentUser: UserDocument,
+    @Req() request,
+    @Query() paginationDto: PaginationDto,
+  ): Promise<ContactsListPagination> {
+    return this.messageService.getContactsListWithPagination({
+      request,
+      currentUser,
+      paginationDto,
+    });
   }
 }

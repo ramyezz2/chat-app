@@ -37,15 +37,22 @@ export const buildMessageResponse = ({
 
 export const buildContactListResponse = ({
   contact,
+  currentUserId,
 }: {
+  currentUserId: string;
   contact: MessageDocument;
 }): ContactListResponse => {
+  const member =
+    contact.receiver._id.toString() == currentUserId
+      ? (contact.sender as unknown as UserDocument)
+      : (contact.receiver as unknown as UserDocument);
+
   return {
     // id: contact.id,
     content: contact.content || '',
     type: contact.type,
     member: buildMemberSimpleListResponse({
-      member: contact.sender as unknown as UserDocument,
+      member,
     }),
     room: buildRoomSimpleListResponse({
       room: contact.room as unknown as RoomDocument,
