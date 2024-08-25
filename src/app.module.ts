@@ -1,7 +1,7 @@
 import { Module, ValidationPipe } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { AppGuard } from './shared/guards/app.guard';
 import { MongooseModule } from '@nestjs/mongoose';
 import environment from './config/environment';
@@ -12,6 +12,7 @@ import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import { RedisOptions } from './config/redis-cashing-options';
 import { ChatsModule } from './chat/chats.module';
 import { MessageModule } from './message/message.module';
+import { AllExceptionsFilter } from './shared/exceptions/all-exception-filter.exception';
 
 @Module({
   imports: [
@@ -36,6 +37,10 @@ import { MessageModule } from './message/message.module';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
+    },
     {
       provide: APP_PIPE,
       useClass: ValidationPipe,
