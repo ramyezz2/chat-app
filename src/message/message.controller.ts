@@ -32,11 +32,15 @@ import {
   UpdateMessageRequest,
 } from './dto';
 import { MessageService } from './message.service';
+import { RedisSocketService } from 'src/chat/redis-socket.service';
 
 @ApiTags('messages')
 @Controller('messages')
 export class MessageController {
-  constructor(private readonly messageService: MessageService) {}
+  constructor(
+    private readonly messageService: MessageService,
+    private readonly redisSocketService: RedisSocketService,
+  ) {}
   @ApiOperation({
     description: 'Get direct messages with pagination',
     summary: 'Get direct messages with pagination',
@@ -202,7 +206,17 @@ export class MessageController {
       );
     }
 
-    return this.messageService.createRoomMessage({ currentUser, dto });
+    const message = await this.messageService.createRoomMessage({
+      currentUser,
+      dto,
+    });
+
+    // Publish the message to Redis for the specific room
+    this.redisSocketService.publishMessageToRoom({
+      roomId: dto.roomId,
+      message,
+    });
+    return message;
   }
 
   @ApiOperation({

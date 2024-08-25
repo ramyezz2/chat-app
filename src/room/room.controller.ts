@@ -35,11 +35,15 @@ import {
   UpdateRoomRequest,
 } from './dto';
 import { RoomService } from './room.service';
+import { RedisSocketService } from 'src/chat/redis-socket.service';
 
 @ApiTags('rooms')
 @Controller('rooms')
 export class RoomController {
-  constructor(private readonly roomService: RoomService) {}
+  constructor(
+    private readonly roomService: RoomService,
+    private readonly redisSocketService: RedisSocketService,
+  ) {}
   @ApiOperation({
     description: 'Get rooms with pagination',
     summary: 'Get rooms with pagination',
@@ -441,5 +445,109 @@ export class RoomController {
       roomId,
       currentUser,
     });
+  }
+
+  @ApiOperation({
+    description: 'Join chat Room data',
+    summary: 'Join chat Room data',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'You Joined the chat room the room successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    type: MainExceptionDto,
+    description: 'unauthorized, bearer token not provided',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    type: MainExceptionDto,
+    description: 'Room not found',
+  })
+  @ApiBearerAuth()
+  @Post(':roomId/join-chat-room')
+  async joinChatRoom(
+    @Param('roomId') roomId: string,
+    @CurrentUser() currentUser: UserDocument,
+  ) {
+    const room = await this.roomService.getRoom({ id: roomId });
+    if (!room) {
+      const message = 'Room not found.';
+      throw new HttpException(
+        { message, errors: [message] },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    //check if member already exist in the DB
+    const memberInTheRoom = await this.roomService.isMemberInTheRoom({
+      currentUser,
+      roomId,
+    });
+    if (!memberInTheRoom) {
+      const message = 'You are not a member in this room.';
+      throw new HttpException(
+        { message, errors: [message] },
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    // Subscribe the user to the specific room for receiving messages
+    await this.redisSocketService.addUserToRoom({ userId: currentUser.id, roomId });
+
+    return;
+  }
+
+  @ApiOperation({
+    description: 'Join chat Room data',
+    summary: 'Join chat Room data',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'You Joined the chat room the room successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    type: MainExceptionDto,
+    description: 'unauthorized, bearer token not provided',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    type: MainExceptionDto,
+    description: 'Room not found',
+  })
+  @Post(':roomId/leave-chat-room')
+  async leaveChatRoom(
+    @Param('roomId') roomId: string,
+    @CurrentUser() currentUser: UserDocument,
+  ) {
+    const room = await this.roomService.getRoom({ id: roomId });
+    if (!room) {
+      const message = 'Room not found.';
+      throw new HttpException(
+        { message, errors: [message] },
+        HttpStatus.NOT_FOUND,
+      );
+    }
+    //check if member already exist in the DB
+    const memberInTheRoom = await this.roomService.isMemberInTheRoom({
+      currentUser,
+      roomId,
+    });
+    if (!memberInTheRoom) {
+      const message = 'You are not a member in this room.';
+      throw new HttpException(
+        { message, errors: [message] },
+        HttpStatus.CONFLICT,
+      );
+    }
+
+    // Unsubscribe the user from the specific room
+    await this.redisSocketService.removeUserFromRoom({
+      userId: currentUser.id,
+      roomId,
+    });
+
+    return;
   }
 }

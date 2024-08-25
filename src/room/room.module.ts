@@ -4,6 +4,7 @@ import { UserDocument, UserSchema } from '../user/user.schema';
 import { RoomController } from './room.controller';
 import { RoomDocument, RoomSchema } from './room.schema';
 import { RoomService } from './room.service';
+import { RedisSocketService } from 'src/chat/redis-socket.service';
 
 @Module({
   imports: [
@@ -13,7 +14,7 @@ import { RoomService } from './room.service';
     ]),
   ],
   controllers: [RoomController],
-  providers: [RoomService],
+  providers: [RoomService, RedisSocketService],
   exports: [RoomService],
 })
 export class RoomModule {}

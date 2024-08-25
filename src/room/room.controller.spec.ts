@@ -16,6 +16,7 @@ import { RoomController } from './room.controller';
 import { RoomService } from './room.service';
 import { RoomTypeEnum } from 'src/shared/enums';
 import { faker } from '@faker-js/faker';
+import { RedisSocketService } from 'src/chat/redis-socket.service';
 
 describe('Room Controller', () => {
   let api;
@@ -45,6 +46,15 @@ describe('Room Controller', () => {
             isMemberInTheRoom: jest.fn(),
             joinRoom: jest.fn(),
             leaveRoom: jest.fn(),
+          },
+        },
+        {
+          provide: RedisSocketService,
+          useValue: {
+            publishMessageToRoom: jest.fn(),
+            publishMessageToDirect: jest.fn(),
+            addUserToRoom: jest.fn(),
+            removeUserFromRoom: jest.fn(),
           },
         },
       ],

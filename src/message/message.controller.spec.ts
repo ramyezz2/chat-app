@@ -17,6 +17,7 @@ import { MessageResponse } from './dto';
 import { MessageController } from './message.controller';
 import { MessageService } from './message.service';
 import { mockedRoomResponse } from 'src/mocks/roomMocks';
+import { RedisSocketService } from 'src/chat/redis-socket.service';
 
 describe('Message Controller', () => {
   let api;
@@ -43,6 +44,13 @@ describe('Message Controller', () => {
             createRoomMessage: jest.fn(),
             update: jest.fn(),
             deleteOne: jest.fn(),
+          },
+        },
+        {
+          provide: RedisSocketService,
+          useValue: {
+            publishMessageToRoom: jest.fn(),
+            publishMessageToDirect: jest.fn(),
           },
         },
       ],
@@ -99,7 +107,7 @@ describe('Message Controller', () => {
       jest
         .spyOn(messageService, 'checkMemberExist')
         .mockImplementation(() => Promise.resolve(true));
-      
+
       const messages = await api
         .get(`/api/messages/direct/${memberId}`)
         .set('Accept', 'application/json')
