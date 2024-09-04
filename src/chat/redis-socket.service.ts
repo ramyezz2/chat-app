@@ -1,23 +1,22 @@
-// redis-socket.service.ts
-
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Inject, Injectable } from '@nestjs/common';
-import { Cache } from 'cache-manager';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { Socket } from 'socket.io';
 import environment from 'src/config/environment';
-
+import { Cache } from 'cache-manager';
+import { Socket } from 'socket.io';
 @Injectable()
 export class RedisSocketService {
   private readonly publisher: Redis;
   private readonly subscriber: Redis;
 
   constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) {
-    // Connect to Redis with the configuration options
+    // Get the Redis configuration options from the ConfigService
     const host = environment.redisHost;
     const port = parseInt(environment.redisPort);
     const username = environment.redisUserName;
     const password = environment.redisPassword;
+
+    // Connect to Redis with the configuration options
     this.publisher = new Redis({
       host,
       port,
@@ -30,18 +29,23 @@ export class RedisSocketService {
       username,
       password,
     });
-
-    this.subscriber.on('message', (channel, message) => {
-      // Handle incoming messages from Redis
-      // Broadcast the message to connected sockets in the room
-      // You can also add more logic here
-    });
-
-    this.subscriber.subscribe('messages');
   }
 
-  publishMessage(message: any) {
-    this.publisher.publish('messages', JSON.stringify(message));
+  publish(channel: string, message: any) {
+    this.publisher.publish(channel, JSON.stringify(message));
+  }
+
+  subscribe(channel: string, callback: (message: string) => void): void {
+    this.subscriber.subscribe(channel);
+    this.subscriber.on('message', (receivedChannel, receivedMessage) => {
+      if (receivedChannel === channel) {
+        callback(receivedMessage);
+      }
+    });
+  }
+
+  unsubscribe(channel: string): void {
+    this.subscriber.unsubscribe(channel);
   }
 
   addSocketToRoom(socket: Socket, roomId: string) {
@@ -54,17 +58,19 @@ export class RedisSocketService {
 
   async setUserStatus({
     userId,
+    socketId,
     status,
   }: {
     userId: string;
     status: 'ONLINE' | 'OFFLINE';
+    socketId?: string;
   }) {
     const cashedUser = await this.cacheManager.get(userId);
     if (cashedUser) {
       cashedUser['status'] = status;
       this.cacheManager.set(userId, cashedUser);
     } else {
-      this.cacheManager.set(userId, { status });
+      this.cacheManager.set(userId, { status, socketId });
     }
   }
 
@@ -97,14 +103,16 @@ export class RedisSocketService {
   }
 
   async publishMessageToMember({
-    memberId,
+    receiverId,
     message,
   }: {
-    memberId: string;
+    receiverId: string;
     message: any;
   }) {
-    if (await this.isUserOnline(memberId)) {
-      this.publisher.publish(`user:${memberId}:messages`, message);
-    }
+    const privateChannel = `private-${receiverId}`;
+
+    // Publish the message to the receiver's private channel
+    this.publisher.publish(privateChannel, JSON.stringify(message));
+    return { status: 'Message sent', message };
   }
 }

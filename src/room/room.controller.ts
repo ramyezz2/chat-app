@@ -493,7 +493,10 @@ export class RoomController {
     }
 
     // Subscribe the user to the specific room for receiving messages
-    await this.redisSocketService.addUserToRoom({ userId: currentUser.id, roomId });
+    await this.redisSocketService.addUserToRoom({
+      userId: currentUser.id,
+      roomId,
+    });
 
     return;
   }
