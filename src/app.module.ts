@@ -10,7 +10,7 @@ import { RoomModule } from './room/room.module';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { CacheInterceptor, CacheModule } from '@nestjs/cache-manager';
 import { RedisOptions } from './config/redis-cashing-options';
-import { ChatsModule } from './chat/chats.module';
+import { ChatModule } from './chat/chat.module';
 import { MessageModule } from './message/message.module';
 import { AllExceptionsFilter } from './shared/exceptions/all-exception-filter.exception';
 
@@ -31,7 +31,7 @@ import { AllExceptionsFilter } from './shared/exceptions/all-exception-filter.ex
     UserModule,
     RoomModule,
     MessageModule,
-    ChatsModule,
+    ChatModule,
   ],
 
   controllers: [AppController],
