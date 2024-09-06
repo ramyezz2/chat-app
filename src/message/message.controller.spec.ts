@@ -50,7 +50,7 @@ describe('Message Controller', () => {
           provide: RedisSocketService,
           useValue: {
             publishMessageToRoom: jest.fn(),
-            publishMessageToDirect: jest.fn(),
+            publishMessageToMember: jest.fn(),
           },
         },
       ],

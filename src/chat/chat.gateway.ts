@@ -12,8 +12,8 @@ import { Server, Socket } from 'socket.io';
 import { Logger, UseGuards } from '@nestjs/common';
 import { RedisSocketService } from './redis-socket.service';
 import { wsAuthMiddleware } from 'src/shared/middleware/ws-auth.middleware';
+import { AppGuard } from 'src/shared/guards/app.guard';
 
-@UseGuards(wsAuthMiddleware)
 @WebSocketGateway({ cors: true })
 export class ChatGateway
   implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
@@ -21,14 +21,25 @@ export class ChatGateway
   @WebSocketServer() server: Server;
   private readonly logger = new Logger(ChatGateway.name);
   // Inject the RedisService
-  constructor(private redisSocketService: RedisSocketService) {
+  constructor(
+    private redisSocketService: RedisSocketService,
+    // private readonly wsAuthMiddlewareService: wsAuthMiddleware, // Inject the middleware
+  ) {
     this.redisSocketService.subscribe('chat', (message) => {
       this.server.emit('message', message);
+    });
+
+    this.redisSocketService.subscribe('public', (message) => {
+      this.server.emit('publicMessage', message);
     });
   }
 
   afterInit(server: Server) {
     console.log('WebSocket server initialized');
+
+    // Use the middleware
+    // server.use((socket, next) => this.wsAuthMiddlewareService.use(socket, next));
+
     this.redisSocketService.subscribe('public', (message) => {
       this.server.emit('publicMessage', message);
     });
@@ -43,9 +54,12 @@ export class ChatGateway
     const userId = socket.handshake.auth?.user?.id;
 
     if (userId) {
-    
       // Update the user's status to "online"
-      await this.redisSocketService.setUserStatus({ userId, status: 'ONLINE', socketId: socket.id });
+      await this.redisSocketService.setUserStatus({
+        userId,
+        status: 'ONLINE',
+        socketId: socket.id,
+      });
       try {
         // Subscribe to the private channel for this user
         this.redisSocketService.subscribe(`private-${userId}`, (message) => {
@@ -74,13 +88,14 @@ export class ChatGateway
     });
   }
 
-  @UseGuards(wsAuthMiddleware)
+  
+  @UseGuards(AppGuard)
   @SubscribeMessage('sendPublicMessage')
   handlePublicMessage(@MessageBody() message: string): void {
     this.redisSocketService.publish('public', message);
   }
 
-  @UseGuards(wsAuthMiddleware)
+  @UseGuards(AppGuard)
   @SubscribeMessage('sendPrivateMessage')
   handlePrivateMessage(
     @MessageBody() { to, message }: { to: string; message: string },
@@ -88,10 +103,19 @@ export class ChatGateway
   ): void {
     const privateChannel = `private-${to}`;
     this.redisSocketService.publish(privateChannel, message);
-    socket.to(privateChannel).emit('privateMessage', message);
+    socket.to(privateChannel).emit(privateChannel, message);
   }
 
-  @UseGuards(wsAuthMiddleware)
+  @UseGuards(AppGuard)
+  @SubscribeMessage('sendRoomMessage')
+  handleRoomMessage(
+    @MessageBody() { roomId, message }: { roomId: number; message: string },
+    @ConnectedSocket() socket: Socket,
+  ): void {
+    const roomChannel = `room-${roomId}`;
+    this.redisSocketService.publish(roomChannel, JSON.stringify(message)); // Publish to Redis channel
+  }
+
   @SubscribeMessage('newMessage')
   async handleNewMessage(
     @MessageBody()
@@ -100,9 +124,11 @@ export class ChatGateway
       content: any;
       senderId: string;
       memberId: string;
-    },
+    },    @ConnectedSocket() socket: Socket,
+
   ) {
     // Publish the message to the Redis channel
     this.redisSocketService.publish('chat', JSON.stringify(message));
+    this.server.emit('newMessage', message);
   }
 }

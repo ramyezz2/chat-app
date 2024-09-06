@@ -188,7 +188,7 @@ export class MessageController {
 
     // Publish the message to Redis for the specific member
     this.redisSocketService.publishMessageToMember({
-      memberId: dto.receiverId,
+      receiverId: dto.receiverId,
       message,
     });
 
