@@ -37,7 +37,7 @@ export class RedisSocketService {
 
   subscribe(channel: string, callback: (message: string) => void): void {
     this.subscriber.subscribe(channel);
-    this.subscriber.on('message', (receivedChannel, receivedMessage) => {
+    this.subscriber.on('newMessage', (receivedChannel, receivedMessage) => {
       if (receivedChannel === channel) {
         callback(receivedMessage);
       }
@@ -88,7 +88,7 @@ export class RedisSocketService {
     this.publisher.srem(`room:${roomId}:users`, userId);
   }
 
-  publishMessageToRoom({ roomId, message }: { roomId: string; message: any }) {
+  async publishMessageToRoom({ roomId, message }: { roomId: string; message: any }) {
     const messageData = JSON.stringify(message);
     this.publisher.smembers(`room:${roomId}:users`, (err, members) => {
       if (err) {
@@ -111,6 +111,7 @@ export class RedisSocketService {
   }) {
     const privateChannel = `private-${receiverId}`;
 
+    console.log("🚀 ~ RedisSocketService ~ privateChannel:", privateChannel)
     // Publish the message to the receiver's private channel
     this.publisher.publish(privateChannel, JSON.stringify(message));
     return { status: 'Message sent', message };
